@@ -1,5 +1,9 @@
 ﻿***** KiloGramm *****
 
-=== v1.0.00 === 2013-12-01 ===
+=== v1.0.1 === 2013-12-02 ===
+    + Автообновление https://github.com/delletenebre/xbmc-addon-kilogramme
+
+
+=== v1.0.0 === 2013-12-01 ===
     + [TS.KG]
     + [Cinema Online]
