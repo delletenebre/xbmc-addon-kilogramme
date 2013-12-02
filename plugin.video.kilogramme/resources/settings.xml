@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+	<category label="Настройки">
+		<setting label="TS.KG" type="lsep"/>
+		<setting id="tskg_news_count" type="enum"      label="<Последние поступления> за период" values="Сегодня|Последние 2 дня|Последние 3 дня|Последние 4 дня|Последние 5 дней" default="2"/>
+		<setting id="tskg_provider"   type="labelenum" label="Мой провайдер" values="Кыргызтелеком|Другой" default="Другой"/>
+	</category>
+	<category label="Авторизация">
+		<setting label="Namba" type="lsep"/>
+		<setting id="nambakg_login" type="text" label="Логин" default=""  />
+		<setting id="nambakg_password" type="text" label="Пароль" default="" option="hidden" />
+	</category>
+</settings>
