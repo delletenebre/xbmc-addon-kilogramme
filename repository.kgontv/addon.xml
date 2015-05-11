@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.kgontv" name="KGOnTV XBMC Add-ons" version="1.0.0" provider-name="delletenebre">
+  <extension point="xbmc.addon.repository" name="KGOnTV XBMC Add-ons">
+    <info compressed="true">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
+    <checksum>https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml.md5</checksum>
+    <datadir zip="false">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master</datadir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">Install Add-ons from KG OnTV Add-on Repository</summary>
+    <description lang="en">Plug-ins for XBMC</description>
+    <summary lang="ru">Дополнения из репозитория KG OnTV</summary>
+    <description lang="ru">Программные дополнения для XBMC</description>
+    <disclaimer>XBMC add-on that allow viewing popular *.KG resources</disclaimer>
+    <platform>all</platform>
+  </extension>
+</addon>
