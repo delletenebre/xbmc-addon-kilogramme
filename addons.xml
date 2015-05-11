@@ -1,3 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
+<addon id="plugin.video.kilogramme"
+       name="KiloGramme"
+       version="1.4.1"
+       provider-name="delletenebre@gmail.com">
+  <requires>
+    <import addon="xbmc.python"
+            version="2.1.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource"
+             provides="video"
+             library="addon.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.repository"
+             name="KiloGramme self-update repository">
+    <info compressed="true">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
+    <checksum>https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml.md5</checksum>
+    <datadir zip="true">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master</datadir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en">KiloGramme - watch online videos found at *.kg sites</summary>
+    <summary lang="ru">KiloGramme - просмотр видео с любимых сайтов в зоне *.kg</summary>
+    <description lang="en">
+KiloGramme - watch online videos found at *.kg sites:
+    * TS.KG (http://ts.kg/)
+    * Cinema Online (http://cinemaonline.kg/)
+    * OnlineTV (http://onlinetv.kg/)
+    * Namba.Kinozal (http://movie.namba.kg/)
+    * Namba.Serials (http://serials.namba.kg/)
+    * Category "Web-cameras" (http://live.saimanet.kg, http://smotri.kg, http://kt.kg)
+    </description>
+    <description lang="ru">
+KiloGramme - просмотр видео с лучших сайтов Кыргызстана. Включает в себя:
+    * TS.KG (http://ts.kg/)
+    * Cinema Online (http://cinemaonline.kg/)
+    * OnlineTV (http://onlinetv.kg/)
+    * Namba.Кинозал (http://movie.namba.kg/)
+    * Namba.Сериалы (http://serials.namba.kg/)
+    * Раздел "Веб-камеры" (http://live.saimanet.kg, http://smotri.kg, http://kt.kg)
+    </description>
+    <platform>all</platform>
+    <website>https://github.com/delletenebre/xbmc-addon-kilogramme</website>
+    <forum>http://diesel.elcat.kg/index.php?showtopic=43533785</forum>
+    <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
+    <email>delletenebre at gmail dot com</email>
+    <license>GNU GENERAL PUBLIC LICENSE. Version 3, 29 June 2007</license>
+  </extension>
+</addon>
 </addons>

@@ -61,7 +61,7 @@ def get_cameras():
             cams = re.compile('>([^<]{6,})<\/a><\/span><\/span>[^:]*(rtmp[^"]+)[^\/]*\/([^"]+)').findall(result['content'])
             for cam in cams:
                 try:
-                    #xbmc.log('Json item : ' + str(item['title']))
+                    xbmc.log('Json item : ' + str(item['title']))
                     items.append({'name': cam[0], 'url':cam[1], 'icon':BASE_URL_SMOTRI + cam[2]})
                 except:
                     xbmc.log('json exception '+ str(sys.exc_info()[0]))
