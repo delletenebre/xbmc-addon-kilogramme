@@ -1,0 +1,4 @@
+$ cat .gitignore
+*~
+*.pyc
+md5.py

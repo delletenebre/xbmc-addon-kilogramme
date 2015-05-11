@@ -182,11 +182,15 @@ class ListItem(object):
         '''Returns the wrapped xbmcgui.ListItem'''
         return self._listitem
 
+    def set_is_not_folder(self):
+        '''Sets the listitem's is_folder flag'''
+        self.is_folder = False
+
     @classmethod
     def from_dict(cls, label=None, label2=None, icon=None, thumbnail=None,
                   path=None, selected=None, info=None, properties=None,
                   context_menu=None, replace_context_menu=False,
-                  is_playable=None, info_type='video', stream_info=None):
+                  is_playable=None, info_type='video', stream_info=None, is_not_folder=None):
         '''A ListItem constructor for setting a lot of properties not
         available in the regular __init__ method. Useful to collect all
         the properties in a dict and then use the **dct to call this
@@ -202,6 +206,9 @@ class ListItem(object):
 
         if is_playable:
             listitem.set_is_playable(True)
+            
+        if is_not_folder:
+            listitem.set_is_not_folder()
 
         if properties:
             # Need to support existing tuples, but prefer to have a dict for

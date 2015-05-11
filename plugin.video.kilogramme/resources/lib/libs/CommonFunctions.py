@@ -27,8 +27,8 @@ import HTMLParser
 #import chardet
 import json
 
-version = u"2.5.1"
-plugin = u"CommonFunctions-" + version
+version = u"1.5.1"
+plugin = u"CommonFunctions Beta-" + version
 print plugin
 
 USERAGENT = u"Mozilla/5.0 (Windows NT 6.2; Win64; x64; rv:16.0.1) Gecko/20121011 Firefox/16.0.1"
@@ -100,7 +100,8 @@ def getXBMCVersion():
     for key in ["-", " "]:
         if version.find(key) -1:
             version = version[:version.find(key)]
-    version = float(version)
+    # trim from first non-float character to end of string. e.g. 13.2-ALPHA1 to 13.2
+    version = float(re.sub("[^0-9.].*", "", version))
     log(repr(version))
     return version
 
@@ -320,7 +321,7 @@ def extractJS(data, function=False, variable=False, match=False, evaluate=False,
         if function:
             tmp_lst = re.compile(function + '\(.*?\).*?;', re.M | re.S).findall(script)
         elif variable:
-            tmp_lst = re.compile(variable + '[ ]+=.*?;', re.M | re.S).findall(script)            
+            tmp_lst = re.compile(variable.replace("[", "\[").replace("]", "\]") + '[ ]+=.*?;', re.M | re.S).findall(script)            
         else:
             tmp_lst = [script]
         if len(tmp_lst) > 0:
@@ -394,7 +395,7 @@ def extractJS(data, function=False, variable=False, match=False, evaluate=False,
 def fetchPage(params={}):
     get = params.get
     link = get("link")
-    ret_obj = {}
+    ret_obj = { "new_url": link, "content": "", "status": 500, "header": ""}
     if get("post_data"):
         log("called for : " + repr(params['link']))
     else:
@@ -409,38 +410,48 @@ def fetchPage(params={}):
         if get("hide_post_data"):
             log("Posting data", 2)
         else:
-            log("Posting data: " + urllib.urlencode(get("post_data")), 2)
+            log("Posting data: ", 2)# + urllib.urlencode(get("post_data")), 2)
 
-        request = urllib2.Request(link, urllib.urlencode(get("post_data")))
+        if type( get("post_data") ) is str:
+            request = urllib2.Request( link, get("post_data") )
+        else:
+            request = urllib2.Request( link, urllib.urlencode( get("post_data") ) )
+        
         request.add_header('Content-Type', 'application/x-www-form-urlencoded')
     else:
         log("Got request", 2)
         request = urllib2.Request(link)
 
+    request.add_header('User-Agent', USERAGENT)
+
     if get("headers"):
         for head in get("headers"):
             request.add_header(head[0], head[1])
-
-    request.add_header('User-Agent', USERAGENT)
 
     if get("cookie"):
         request.add_header('Cookie', get("cookie"))
 
     if get("refering"):
+        log("Setting refering: " + get("refering"), 3)
         request.add_header('Referer', get("refering"))
 
     try:
         log("connecting to server...", 1)
 
         con = urllib2.urlopen(request)
-        ret_obj["header"] = con.info()
+        ret_obj["header"] = con.info().headers
         ret_obj["new_url"] = con.geturl()
         if get("no-content", "false") == u"false" or get("no-content", "false") == "false":
             inputdata = con.read()
             #data_type = chardet.detect(inputdata)
             #inputdata = inputdata.decode(data_type["encoding"])
-            try:   ret_obj["content"] = inputdata.decode("utf-8")
-            except:ret_obj["content"] = inputdata
+            try:
+                ret_obj["content"] = inputdata.decode("utf-8")                    
+            except:
+                try:
+                    ret_obj["content"] = inputdata.decode("latin-1")                    
+                except:
+                    raise    
 
         con.close()
 

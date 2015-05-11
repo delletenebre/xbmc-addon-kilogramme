@@ -1,34 +1,3 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-<addon id="plugin.video.kilogramme"
-       name="KiloGramme"
-       version="1.0.1"
-       provider-name="delletenebre@gmail.com">
-  <requires>
-    <import addon="xbmc.python" version="2.0"/>
-  </requires>
-  <extension point="xbmc.python.pluginsource" provides="video" library="addon.py">
-    <provides>video</provides>
-  </extension>
-  <extension point="xbmc.addon.repository" name="KiloGramme self-update repository">
-    <info compressed="true">https://github.com/delletenebre/xbmc-addon-kilogramme/raw/master/addons.xml</info>
-    <checksum>https://github.com/delletenebre/xbmc-addon-kilogramme/raw/master/addons.xml.md5</checksum>
-    <datadir zip="true">https://github.com/delletenebre/xbmc-addon-kilogramme/raw/master</datadir>
-  </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary lang="en">KiloGramme - watch online videos found at *.kg sites</summary>
-    <description lang="en">
-KiloGramme - watch online videos found at *.kg sites:
-    * TS.KG (http://ts.kg/)
-    * Cinema Online (http://cinemaonline.kg/)
-    </description>
-    <summary lang="ru">KiloGramme - просмотр видео с любимых сайтов в зоне *.kg</summary>
-    <description lang="ru">
-KiloGramme - просмотр видео с лучших сайтов Кыргызстана. Включает в себя:
-    * TS.KG (http://ts.kg/)
-    * Cinema Online (http://cinemaonline.kg/)
-    </description>
-    <platform>all</platform>
-  </extension>
-</addon>
 </addons>
