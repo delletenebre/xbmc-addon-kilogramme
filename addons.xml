@@ -13,12 +13,6 @@
              library="addon.py">
     <provides>video</provides>
   </extension>
-  <extension point="xbmc.addon.repository"
-             name="KGOnTV XBMC Add-ons">
-    <info compressed="false">http://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
-    <checksum>http://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml.md5</checksum>
-    <datadir zip="true">http://raw.github.com/delletenebre/xbmc-addon-kilogramme/master</datadir>
-  </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">KiloGramme - watch online videos found at *.kg sites</summary>
     <summary lang="ru">KiloGramme - просмотр видео с любимых сайтов в зоне *.kg</summary>
