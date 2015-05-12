@@ -16,7 +16,7 @@
              name="KGOnTV XBMC Add-ons">
     <info compressed="true">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
     <checksum>https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml.md5</checksum>
-    <datadir zip="false">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master</datadir>
+    <datadir zip="true">https://raw.github.com/delletenebre/xbmc-addon-kilogramme/master</datadir>
   </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">KiloGramme - watch online videos found at *.kg sites</summary>
