@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.kilogramme"
        name="KiloGramme"
-       version="1.4.1"
+       version="1.4.2"
        provider-name="delletenebre@gmail.com">
   <requires>
     <import addon="xbmc.python"

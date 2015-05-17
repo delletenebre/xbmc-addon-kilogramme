@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import urllib2, re, json
+import urllib2, re, json, traceback
 
 from _header import *
 
@@ -137,10 +137,9 @@ def get_lastadded(url):
             days       = 0
             day_title  = common.parseDOM(news_table, 'h3')
 
-            links_by_day = re.compile('<h3>(.+?)<h3>').findall(str(news_table))
-
             for i in range(0, SETT_DAYS+1):
-                div_news = common.parseDOM(links_by_day[i], 'div', attrs = {'class':'clearfix news'})
+                links_by_day = re.compile('<h3>' + day_title[i] + '(.+?)<h3>\d').findall(str(news_table))
+                div_news = common.parseDOM(links_by_day[0], 'div', attrs = {'class':'clearfix news'})
 
                 for item in div_news:
                     try:
@@ -160,7 +159,10 @@ def get_lastadded(url):
                         is_playable = len(route[-1].split('-')) > 2
 
                         if is_playable:
-                            episode_html = common.fetchPage({'link': href[0]})
+                            try:
+                                episode_html = common.fetchPage({'link': BASE_URL[:-1]+href[0]})
+                            except:
+                                episode_html = common.fetchPage({'link': href[0]})
                             if episode_html['status'] == 200:
                                 ep_html = episode_html['content']
                                 ep_id = common.parseDOM(ep_html, 'input', attrs = {'id':'episode_id_input'}, ret = 'value')
@@ -176,10 +178,10 @@ def get_lastadded(url):
                         label  = common.replaceHTMLCodes( day_title[i][0:5] + '&emsp;' + title[0].decode('unicode-escape') + badge )
                         label2 = common.replaceHTMLCodes( title[0].decode('unicode-escape') )
                         
-                        items.append({'title':label, 'icon':'', 'is_playable':is_playable, 'url':play_url if(is_playable) else href[0], 'name':route[2], 'category_id':'0', 'label':label2, 'info': info})
+                        items.append({'title':label, 'icon':'', 'is_playable':is_playable, 'url':play_url if(is_playable) else href[0], 'name':route[0], 'category_id':'0', 'label':label2, 'info': info})
                         
-                    except Exception as e: pass
-    except: pass
+                    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
 
 
@@ -206,7 +208,7 @@ def get_categories(url):
                     category = ''
 
                     items.append({'title':title, 'category':options_id[i], 'icon':icon, 'fanart':branding})
-    except: pass
+    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
 
 
@@ -246,7 +248,7 @@ def get_tvshows(url):
                 
                 if(li):
                     get_shows_by_pagination(page+1)
-        except: pass
+        except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
 
     get_shows_by_pagination(1)
 
@@ -270,7 +272,7 @@ def get_seasons(url, title):
 
                 label = common.replaceHTMLCodes( title.decode('utf-8') + ' &emsp; ' + season_number[0] )
                 items.append({'title':label, 'url':url, 'icon':'', 'season':season_number[0][6:]})
-    except Exception as e: print e
+    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
     
 
@@ -312,7 +314,7 @@ def get_videos_by_season(url, title, season):
                 
                 items.append({'title':label, 'url':href, 'icon':icon})
                 
-    except Exception as e: pass#print e
+    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
 
 
@@ -335,7 +337,7 @@ def get_search(search_value):
                     label2 = _key if(a < 0) else _key[:a]
                     
                     items.append({'title':label, 'icon':'', 'url':_url, 'name':route[0], 'category_id':'0', 'label':label2})
-    except Exception as e: print e
+    except: xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
     
 
