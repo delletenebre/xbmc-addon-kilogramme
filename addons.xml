@@ -2,7 +2,7 @@
 <addons>
 <addon id="plugin.video.kilogramme"
        name="KiloGramme"
-       version="1.4.3"
+       version="1.5.0"
        provider-name="delletenebre@gmail.com">
   <requires>
     <import addon="xbmc.python"
@@ -18,6 +18,7 @@
     <summary lang="ru">KiloGramme - просмотр видео с любимых сайтов в зоне *.kg</summary>
     <description lang="en">
 KiloGramme - watch online videos found at *.kg sites:
+    * ONAIR.KG (http://www.onair.kg/)
     * TS.KG (http://ts.kg/)
     * Cinema Online (http://cinemaonline.kg/)
     * OnlineTV (http://onlinetv.kg/)
@@ -27,6 +28,7 @@ KiloGramme - watch online videos found at *.kg sites:
     </description>
     <description lang="ru">
 KiloGramme - просмотр видео с лучших сайтов Кыргызстана. Включает в себя:
+    * ONAIR.KG (http://www.onair.kg/)
     * TS.KG (http://ts.kg/)
     * Cinema Online (http://cinemaonline.kg/)
     * OnlineTV (http://onlinetv.kg/)

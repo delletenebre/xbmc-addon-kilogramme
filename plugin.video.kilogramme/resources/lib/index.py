@@ -3,7 +3,7 @@
 
 import xbmcplugin
 from _header import *
-import site_tskg, site_ockg, site_wcam, site_ontvkg, site_nbmv, site_nbts
+import site_tskg, site_ockg, site_onair, site_wcam, site_ontvkg, site_nbmv, site_nbts
 from xbmcswift2 import actions
 
 @plugin.route('/')
@@ -11,6 +11,7 @@ def index():
     items = [
         {'label': site_tskg.BASE_NAME, 'icon' : get_local_icon(site_tskg.BASE_LABEL), 'path': plugin.url_for(site_tskg.BASE_LABEL + '_index')},
         {'label': site_ockg.BASE_NAME, 'icon' : get_local_icon(site_ockg.BASE_LABEL), 'path': plugin.url_for(site_ockg.BASE_LABEL + '_index')},
+        {'label': site_onair.BASE_NAME, 'icon' : get_local_icon(site_onair.BASE_LABEL), 'path': plugin.url_for(site_onair.BASE_LABEL + '_index')},
         {'label': site_ontvkg.BASE_NAME, 'icon' : get_local_icon(site_ontvkg.BASE_LABEL), 'path': plugin.url_for(site_ontvkg.BASE_LABEL + '_index')},
         {'label': site_nbmv.BASE_NAME, 'icon' : get_local_icon(site_nbmv.BASE_LABEL), 'path': plugin.url_for(site_nbmv.BASE_LABEL + '_index')},
         {'label': site_nbts.BASE_NAME, 'icon' : get_local_icon(site_nbts.BASE_LABEL), 'path': plugin.url_for(site_nbts.BASE_LABEL + '_index')},

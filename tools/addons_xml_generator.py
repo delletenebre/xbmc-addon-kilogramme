@@ -61,7 +61,7 @@ class Generator:
                 # create path
                 _path = os.path.join( addon, "addon.xml" )
                 # split lines for stripping
-                xml_lines = open( _path, "r", encoding="UTF-8").read().splitlines()
+                xml_lines = open( _path, "r", encoding="utf8").read().splitlines()
                 # new addon
                 addon_xml = ""
                 # loop thru cleaning each line
@@ -82,7 +82,7 @@ class Generator:
         # clean and add closing tag
         addons_xml = addons_xml.strip() + u("\n</addons>\n")
         # save file
-        self._save_file( addons_xml.encode( "UTF-8" ), file="addons.xml" )
+        self._save_file( addons_xml.encode( "utf8" ), file="addons.xml" )
  
     def _generate_md5_file( self ):
         # create a new md5 hash
@@ -91,11 +91,11 @@ class Generator:
         #    m = md5.new( open( "addons.xml", "r" ).read() ).hexdigest()
         #except ImportError:
         import hashlib
-        m = hashlib.md5( open( "addons.xml", "r" ).read().encode( "UTF-8" ) ).hexdigest()
+        m = hashlib.md5( open( "addons.xml", "r", encoding="utf8" ).read().encode( "utf8" ) ).hexdigest()
  
         # save file
         try:
-            self._save_file( m.encode( "UTF-8" ), file="addons.xml.md5" )
+            self._save_file( m.encode( "utf8" ), file="addons.xml.md5" )
         except Exception as e:
             # oops
             print("An error occurred creating addons.xml.md5 file!\n%s" % e)
