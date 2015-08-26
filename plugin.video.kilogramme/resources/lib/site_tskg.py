@@ -173,7 +173,7 @@ def get_lastadded(url):
                                 temp = ep_json['file']['hls'] if ep_json['file']['is_hls'] else ep_json['file']['mp4']
                                 play_url = temp + UserAgent
                                 info = {
-                                    'duration': ep_json['duration'] / 60  #seconds to minutes
+                                    'duration': ep_json['duration'] / 60  # seconds to minutes
                                 }
 
                         label = common.replaceHTMLCodes(
@@ -191,7 +191,7 @@ def get_lastadded(url):
     return items
 
 
-#method
+# method
 def get_categories(url):
     items = []
     kg_stats(url, GA_CODE, NK_CODE)
@@ -231,7 +231,12 @@ def get_tvshows(url):
 
     def get_shows_by_pagination(page):
         try:
-            result = common.fetchPage({'link': url + '&page=' + str(page)})
+            result = common.fetchPage({'link': url + '&page=' + str(page),
+                                       'headers': [
+                                           ('Content-Type', 'text/html; charset=UTF-8'),
+                                           ('User-Agent',
+                                            'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36'),
+                                       ]})
             kg_stats(url, GA_CODE, NK_CODE)
 
             if result['status'] == 200:
@@ -295,44 +300,41 @@ def get_seasons(url, title):
 def get_videos_by_season(url, title, season):
     items = []
     season = int(season)
-
+    
     try:
-        result = common.fetchPage({'link': url})
+        result = common.fetchPage({'link': url+'-'+str(season)+'-1',
+                                   'headers': [
+                                       ('Content-Type', 'text/html; charset=UTF-8'),
+                                       ('User-Agent',
+                                        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36'),
+                                   ]})
         kg_stats(url, GA_CODE, NK_CODE)
 
         if result['status'] == 200:
             html = result['content']
+            down = common.parseDOM(html, 'a', {'id': 'download-button'}, ret='href')[0]
+            down = down.split('/');
+            down = down[len(down)-1];
+            result = common.fetchPage({'link': BASE_URL + 'show/episode/nav.json?episode=' + down,
+                                   'headers': [
+                                       ('X-Requested-With', 'XMLHttpRequest'),
+                                       ('Content-Type', 'text/html; charset=UTF-8'),
+                                       ('User-Agent',
+                                        'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.157 Safari/537.36'),
+                                   ]})
+            data = json.loads(result['content'])
 
-            sections = common.parseDOM(html, 'section')
-            item = sections[season - 1]
-
-            season_number = common.parseDOM(item, 'h3')
-
-            title_episode_number = common.parseDOM(item, 'a')
-            title_original = common.parseDOM(item, 'a', ret='title')
-            ep_ids = common.parseDOM(item, 'a', ret='data-id')
-
-            for i in range(0, len(title_episode_number)):
-                try:
-                    suffix = ' &emsp; ' + common.replaceHTMLCodes(title_original[i])
-                except:
-                    suffix = ''
-
-                s_num_e_num = 's' + season_number[0][7:] + 'e' + title_episode_number[i]
-
-                for l in range(len(s_num_e_num), 6):
-                    s_num_e_num += '&ensp;'
-
-                label = common.replaceHTMLCodes(title.decode('utf-8') + ' &emsp; ' + s_num_e_num + suffix)
+            for item in data:
+                label = common.replaceHTMLCodes(item['name'].decode('utf-8'))
                 icon = ''
-                ep_json = getEpisode(ep_ids[i])
+                ep_json = getEpisode(item['id'])
                 temp = ep_json['file']['hls'] if ep_json['file']['is_hls'] else ep_json['file']['mp4']
-                href = temp + UserAgent
-
+                href = temp
                 items.append({'title': label, 'url': href, 'icon': icon})
 
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return items
 
 
@@ -363,13 +365,10 @@ def get_search(search_value):
 
 def getEpisode(id):
     result = common.fetchPage({
-        'link': BASE_URL + 'show/episode/episode.json',
+        'link': BASE_URL + 'show/episode/episode.json?episode='+str(id),
         'headers': [
             ('X-Requested-With', 'XMLHttpRequest')
-        ],
-        'post_data': {
-            'episode': id,
-        }
+        ]
     })
     if result['status'] == 200:
         return json.loads(result['content'])
