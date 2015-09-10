@@ -156,6 +156,12 @@ def get_lastadded(url):
 
                         route = get_url_route(href[0])
 
+                        try:
+                            if ( href[0].split('.')[0].find('news') > -1 ):
+                                continue;
+                        except:
+                            xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
                         play_url = ''
                         info = {}
                         is_playable = len(route[-1].split('-')) > 2
@@ -325,7 +331,15 @@ def get_videos_by_season(url, title, season):
             data = json.loads(result['content'])
 
             for item in data:
-                label = common.replaceHTMLCodes(item['name'].decode('utf-8'))
+                s_num_e_num = 's' + str(season) + 'e' + item['title']
+
+                label = common.replaceHTMLCodes(title.decode('utf-8') + ' &emsp; ' + s_num_e_num )
+
+                if 'fullname' in item:
+                    label = label + common.replaceHTMLCodes('&emsp;' + item['fullname'].decode('utf-8'))
+                elif 'name' in item and item['name']:
+                    label = label + common.replaceHTMLCodes('&emsp;' + item['name'].decode('utf-8'))
+                
                 icon = ''
                 ep_json = getEpisode(item['id'])
                 temp = ep_json['file']['hls'] if ep_json['file']['is_hls'] else ep_json['file']['mp4']

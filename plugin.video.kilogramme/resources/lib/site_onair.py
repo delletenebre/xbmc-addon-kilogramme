@@ -124,7 +124,7 @@ def onair_serials_by_country(id):
 @plugin.route('/site/' + BASE_LABEL + '/tvshow/<id>/season/<season_id>/<season_num>')
 def onair_season(id, season_id, season_num):
     title = plugin.request.args['title'][0]
-    plugin.notify('Пожалуйста, подождите', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+    plugin.notify('Пожалуйста, подождите', BASE_NAME, 1000, get_local_icon('noty_' + BASE_LABEL))
     item_list = get_episodes(season_id, title, season_num)
     kgontv_playlist(item_list)
     xbmc.executebuiltin('ActivateWindow(VideoPlaylist)')
