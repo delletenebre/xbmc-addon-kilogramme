@@ -13,7 +13,7 @@ NK_CODE = '4094'
 def onair_index():
     item_list = get_categories(BASE_URL)
     items     = []
-    
+
     if item_list:
         items = [{
             'label'     : item['title'],
@@ -21,15 +21,79 @@ def onair_index():
             'thumbnail' : item['icon'],
         } for item in item_list]
 
+        items = [{
+            'label': set_color('[ Поиск ]', 'dialog', True),
+            'path': plugin.url_for('onair_search'),
+            'icon': get_local_icon('find'),
+        }, {
+            'label': set_color('Последние поступления', 'light', True),
+            'path': plugin.url_for('onair_lastadded'),
+        }, {
+            'label': set_color('Популярные - ТОП 10', 'bright', True),
+            'path': plugin.url_for('onair_popular'),
+        }] + items
+
     else:
         plugin.notify('Сервер недоступен', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
-    
+
     return items
+
+@plugin.route('/site/' + BASE_LABEL + '/search')
+def onair_search():
+    search_val = plugin.keyboard('', 'Что ищете?')
+    if (search_val):
+        item_list = get_search(search_val)
+
+        items = [{
+            'label'     : item['label'],
+            'path'      : plugin.url_for(item['function'], id = item['id'], title = to_utf8(item['title'])) if item['function'] else item['url'],
+            'thumbnail'  : item['icon'],
+            'info'       : item['info'] if item['function'] == False else None,
+            'properties' : item['properties'] if item['function'] == False else None,
+            'is_playable': True if item['function'] == False else False
+         } for item in item_list]
+
+        return items
+    else:
+        plugin.redirect('plugin://' + plugin.id + '/site/' + BASE_LABEL)
+
+
+@plugin.route('/site/' + BASE_LABEL + '/last')
+def onair_lastadded():
+    item_list = get_lastadded()
+
+    items = [{
+        'label'     : item['label'],
+        'path'      : plugin.url_for(item['function'], id = item['id'], title = to_utf8(item['title'])) if item['function'] else item['url'],
+        'thumbnail'  : item['icon'],
+        'info'       : item['info'] if item['function'] == False else None,
+        'properties' : item['properties'] if item['function'] == False else None,
+        'is_playable': True if item['function'] == False else False
+     } for item in item_list]
+
+    return items
+
+
+@plugin.route('/site/' + BASE_LABEL + '/popular')
+def onair_popular():
+    item_list = get_popular()
+
+    items = [{
+        'label'     : item['label'],
+        'path'      : plugin.url_for(item['function'], id = item['id'], title = to_utf8(item['title'])) if item['function'] else item['url'],
+        'thumbnail'  : item['icon'],
+        'info'       : item['info'] if item['function'] == False else None,
+        'properties' : item['properties'] if item['function'] == False else None,
+        'is_playable': True if item['function'] == False else False
+     } for item in item_list]
+
+    return items
+
 
 @plugin.route('/site/' + BASE_LABEL + '/all/<id>')
 def get_all_by_category(id):
     item_list = get_list(id)
-    
+
     items = [{
         'label'     : item['title'],
         'path'      : plugin.url_for(item['function'], id = item['id'], title = to_utf8(item['title'])) if item['function'] else item['url'],
@@ -38,9 +102,12 @@ def get_all_by_category(id):
         'properties' : item['properties'] if item['function'] == False else None,
         'is_playable': True if item['function'] == False else False
     } for item in item_list['items']]
-    
+
     return items
-    
+
+
+
+
 
 @plugin.route('/site/' + BASE_LABEL + '/movie/<id>')
 def onair_movie(id):
@@ -53,7 +120,7 @@ def onair_movie(id):
         'properties' : item['properties'],
         'is_playable': True
     } for item in item_list]
-    
+
     return items
 
 
@@ -68,7 +135,7 @@ def onair_movies_by_genre(id):
         'properties' : item['properties'],
         'is_playable': True
     } for item in item_list]
-    
+
     return items
 
 @plugin.route('/site/' + BASE_LABEL + '/movies/country/<id>')
@@ -82,7 +149,7 @@ def onair_movies_by_country(id):
         'properties' : item['properties'],
         'is_playable': True
     } for item in item_list]
-    
+
     return items
 
 
@@ -96,7 +163,7 @@ def onair_serial(id):
         'thumbnail' : item['icon'],
         'is_not_folder': True,
     } for item in item_list['items']]
-    
+
     return items
 
 @plugin.route('/site/' + BASE_LABEL + '/tvshows/genre/<id>')
@@ -107,7 +174,7 @@ def onair_serials_by_genre(id):
         'path'      : plugin.url_for('onair_serial', id = item['id'], title = to_utf8(item['title'])),
         'thumbnail' : item['icon'],
     } for item in item_list['items']]
-    
+
     return items
 
 @plugin.route('/site/' + BASE_LABEL + '/tvshows/country/<id>')
@@ -118,7 +185,7 @@ def onair_serials_by_country(id):
         'path'      : plugin.url_for('onair_serial', id = item['id'], title = to_utf8(item['title'])),
         'thumbnail' : item['icon'],
     } for item in item_list['items']]
-    
+
     return items
 
 @plugin.route('/site/' + BASE_LABEL + '/tvshow/<id>/season/<season_id>/<season_num>')
@@ -128,6 +195,160 @@ def onair_season(id, season_id, season_num):
     item_list = get_episodes(season_id, title, season_num)
     kgontv_playlist(item_list)
     xbmc.executebuiltin('ActivateWindow(VideoPlaylist)')
+
+
+
+
+# method
+def get_lastadded():
+    items = []
+    try:
+        result = common.fetchPage({'link': BASE_URL + 'films/novelties'})
+        if result['status'] == 200:
+            jsonrs = json.loads(result['content'])
+            for jsonr in reversed(jsonrs):
+                date = jsonr['Date'] + '&emsp;'
+                films = jsonr['Films']
+
+                for item in films:
+                    if 'Type' in item:
+                        item_type = item['Type']
+
+                        if item_type == 'Movie':
+                            movie_jsonr = common.fetchPage({'link': BASE_URL + 'movies/' + str(item['Id'])})
+                            if movie_jsonr['status'] == 200:
+                                item = json.loads(movie_jsonr['content'])
+
+                                cover = item['PosterFile']
+                                href  = item['VideoFile']
+                                info  = {
+                                    'duration'     : str2minutes(item['Duration']) if item['Duration'] else 0,
+                                    'plot'         : item['Description'],
+                                }
+
+                                imdb = str(item['ImdbRating'])
+                                kinopoisk = str(item['KinopoiskRating'])
+                                rating = '&emsp;' + imdb + ' / ' + kinopoisk
+
+                                country = item['Countries']
+                                genres = item['Genres']
+
+                                properties = {
+                                    #'Country': country,
+                                    #'PlotOutline': item['description'],
+                                    'Plot': item['Description'],
+                                    'Year': str(item['ReleaseYear']),
+                                    'Rating': imdb
+                                }
+
+                                country = '&emsp;(' + country + ')' if (country) else ''
+
+                                label = common.replaceHTMLCodes( date + '[B]' + item['Title'] + '[/B]' + country + '&emsp;' + genres + rating )
+                                title = common.replaceHTMLCodes( item['Title'] )
+
+                                items.append({
+                                    'label': label,
+                                    'title': title,
+                                    'icon': cover,
+                                    'url': href,
+                                    'info': info,
+                                    'properties': properties,
+                                    'function': False,
+                                })
+
+                        elif item_type == 'Serial':
+
+                            id    = item['Id']
+                            title = common.replaceHTMLCodes( item['Title'] )
+                            label = common.replaceHTMLCodes( date + '[B]' + item['Title'] + '[/B]' )
+                            icon  = item['PosterFile']
+
+                            items.append({
+                                'label': label,
+                                'title': title,
+                                'icon': icon,
+                                'id': id,
+                                'function': 'onair_serial'
+                            })
+
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
+    return items
+
+
+# method
+def get_popular():
+    items = []
+    try:
+        result = common.fetchPage({'link': BASE_URL + 'films/popular'})
+        if result['status'] == 200:
+            jsonrs = json.loads(result['content'])
+            for item in jsonrs:
+                if 'Type' in item:
+                    item_type = item['Type']
+
+                    if item_type == 'Movie':
+                        movie_jsonr = common.fetchPage({'link': BASE_URL + 'movies/' + str(item['Id'])})
+                        if movie_jsonr['status'] == 200:
+                            item = json.loads(movie_jsonr['content'])
+
+                            cover = item['PosterFile']
+                            href  = item['VideoFile']
+                            info  = {
+                                'duration'     : str2minutes(item['Duration']) if item['Duration'] else 0,
+                                'plot'         : item['Description'],
+                            }
+
+                            imdb = str(item['ImdbRating'])
+                            kinopoisk = str(item['KinopoiskRating'])
+                            rating = '&emsp;' + imdb + ' / ' + kinopoisk
+
+                            country = item['Countries']
+                            genres = item['Genres']
+
+                            properties = {
+                                #'Country': country,
+                                #'PlotOutline': item['description'],
+                                'Plot': item['Description'],
+                                'Year': str(item['ReleaseYear']),
+                                'Rating': imdb
+                            }
+
+                            country = '&emsp;(' + country + ')' if (country) else ''
+
+                            label = common.replaceHTMLCodes( '[B]' + item['Title'] + '[/B]' + country + '&emsp;' + genres + rating )
+                            title = common.replaceHTMLCodes( item['Title'] )
+
+                            items.append({
+                                'label': label,
+                                'title': title,
+                                'icon': cover,
+                                'url': href,
+                                'info': info,
+                                'properties': properties,
+                                'function': False,
+                            })
+
+                    elif item_type == 'Serial':
+
+                        id    = item['Id']
+                        title = common.replaceHTMLCodes( item['Title'] )
+                        label = common.replaceHTMLCodes( '[B]' + item['Title'] + '[/B]' )
+                        icon  = item['PosterFile']
+
+                        items.append({
+                            'label': label,
+                            'title': title,
+                            'icon': icon,
+                            'id': id,
+                            'function': 'onair_serial'
+                        })
+
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
+    return items
 
 
 #method
@@ -143,13 +364,13 @@ def get_categories(url):
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
     return items
-    
+
 #method
 def get_list(id):
     items = []
     if ( id == '10' ) :
         return {'items': get_movies('movies')}
-    
+
     try:
         apiurl = {
             '11' : 'movies/genres',
@@ -175,7 +396,7 @@ def get_list(id):
                 id    = item['Id']
                 title = item['Name'] if item['Name'] != '-' else 'Без категории'
                 icon  = ''
-            
+
                 items.append({'title':common.replaceHTMLCodes( title ), 'icon':icon, 'id':id, 'function':function})
 
     except:
@@ -217,7 +438,7 @@ def get_movies(url):
                 country = '&emsp;(' + country + ')' if (country) else ''
 
                 title = common.replaceHTMLCodes('[B]' + jsonr['Title'] + '[/B]' + country + '&emsp;' + genres + rating)
-                
+
                 items.append({'function':False, 'title':title, 'icon':cover, 'url':href, 'info':info, 'properties':properties})
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
@@ -238,7 +459,7 @@ def get_tvshow_seasons(id, title):
                 season_id = item['Id']
                 title = tvshow_title + '&emsp;' + item['Name']
                 icon  = ''
-            
+
                 items.append({'title':common.replaceHTMLCodes( title ), 'icon':icon, 'season_id':season_id, 'tvshow_title':tvshow_title, 'season_num':item['Name'][6:]})
 
     except:
@@ -261,7 +482,7 @@ def get_tvshow_season_episodes(id, title):
                 season_id = item['Id']
                 title = tvshow_title + '&emsp;' + item['Name']
                 icon  = ''
-            
+
                 items.append({'title':common.replaceHTMLCodes( title ), 'icon':icon, 'season_id':season_id, 'tvshow_title':tvshow_title})
 
     except:
@@ -269,7 +490,7 @@ def get_tvshow_season_episodes(id, title):
 
     return {'items':items}
 
-    
+
 
 #method
 def get_tvshows_by_genre(id):
@@ -283,7 +504,7 @@ def get_tvshows_by_genre(id):
                 id    = item['Id']
                 title = item['Name'] if item['Name'] != '-' else 'Без категории'
                 icon  = ''
-            
+
                 items.append({'title':common.replaceHTMLCodes( title ), 'icon':icon, 'id':id})
 
     except:
@@ -303,7 +524,7 @@ def get_tvshows_by_country(id):
                 id    = item['Id']
                 title = item['Name'] if item['Name'] != '-' else 'Без категории'
                 icon  = ''
-            
+
                 items.append({'title':common.replaceHTMLCodes( title ), 'icon':icon, 'id':id})
 
     except:
@@ -330,6 +551,80 @@ def get_episodes(id, season_title, season_num):
                 title = common.replaceHTMLCodes(season_title.decode('utf-8') + '&emsp;' + 's' + season_num + 'e' + jsonr['Number'] + '&emsp;' + jsonr['Title'])
 
                 items.append({'title': title, 'url': href, 'icon': icon, 'info':info})
+
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
+    return items
+
+
+#method
+def get_search(val):
+    items = []
+    try:
+        result = common.fetchPage({'link': BASE_URL + 'films/search?title=' + str(val)})
+        if result['status'] == 200:
+            jsonrs = json.loads(result['content'])
+            for item in jsonrs:
+                item_type = item['Type']
+
+                if item_type == 'Movie':
+
+                    movie_jsonr = common.fetchPage({'link': BASE_URL + 'movies/' + str(item['Id'])})
+                    if movie_jsonr['status'] == 200:
+                        item = json.loads(movie_jsonr['content'])
+
+                        cover = item['PosterFile']
+                        href  = item['VideoFile']
+                        info  = {
+                            'duration'     : str2minutes(item['Duration']) if item['Duration'] else 0,
+                            'plot'         : item['Description'],
+                        }
+
+                        imdb = str(item['ImdbRating'])
+                        kinopoisk = str(item['KinopoiskRating'])
+                        rating = '&emsp;' + imdb + ' / ' + kinopoisk
+
+                        country = item['Countries']
+                        genres = item['Genres']
+
+                        properties = {
+                            #'Country': country,
+                            #'PlotOutline': item['description'],
+                            'Plot': item['Description'],
+                            'Year': str(item['ReleaseYear']),
+                            'Rating': imdb
+                        }
+
+                        country = '&emsp;(' + country + ')' if (country) else ''
+
+                        label = common.replaceHTMLCodes( '[B]' + item['Title'] + '[/B]' + country + '&emsp;' + genres + rating )
+                        title = common.replaceHTMLCodes( item['Title'] )
+
+                        items.append({
+                            'label': label,
+                            'title': title,
+                            'icon': cover,
+                            'url': href,
+                            'info': info,
+                            'properties': properties,
+                            'function': False,
+                        })
+                elif item_type == 'Serial':
+
+                    id    = item['Id']
+                    title = common.replaceHTMLCodes( item['Title'] )
+                    label = common.replaceHTMLCodes( '[B]' + item['Title'] + '[/B]' )
+                    icon  = item['PosterFile']
+
+                    items.append({
+                        'label': label,
+                        'title': title,
+                        'icon': icon,
+                        'id': id,
+                        'function': 'onair_serial'
+                    })
+
 
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
