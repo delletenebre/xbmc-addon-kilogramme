@@ -7,6 +7,7 @@ BASE_URL   = 'http://www.onair.kg/api/'
 BASE_NAME  = 'OnAir'
 BASE_LABEL = 'onair'
 #GA_CODE = 'UA-337170-16'
+SETT_DAYS = plugin.get_setting('onair_news_count', int)
 NK_CODE = '4094'
 
 @plugin.route('/site/' + BASE_LABEL)
@@ -206,7 +207,14 @@ def get_lastadded():
         result = common.fetchPage({'link': BASE_URL + 'films/novelties'})
         if result['status'] == 200:
             jsonrs = json.loads(result['content'])
+
+            setting_days = -1
+
             for jsonr in reversed(jsonrs):
+                if setting_days == SETT_DAYS:
+                    break;
+                setting_days = setting_days + 1
+
                 date = jsonr['Date'] + '&emsp;'
                 films = jsonr['Films']
 
@@ -260,7 +268,12 @@ def get_lastadded():
 
                             id    = item['Id']
                             title = common.replaceHTMLCodes( item['Title'] )
-                            label = common.replaceHTMLCodes( date + '[B]' + item['Title'] + '[/B]' )
+
+                            label = item['Title']
+                            if 'AdditionalInfo' in item:
+                                label = item['AdditionalInfo'].replace(label, '[B]' + label + '[/B]')
+                            
+                            label = common.replaceHTMLCodes( date + label )
                             icon  = item['PosterFile']
 
                             items.append({

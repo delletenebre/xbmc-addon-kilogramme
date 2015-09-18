@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
 	<category label="Настройки">
+        <setting label="OnAir" type="lsep"/>
+        <setting id="onair_news_count" type="enum" label="<Последние поступления> за период" values="Сегодня|Последние 2 дня|Последние 3 дня|Последние 4 дня|Последние 5 дней" default="2"/>
 		<setting label="TS.KG" type="lsep"/>
-		<setting id="tskg_news_count" type="enum"      label="<Последние поступления> за период" values="Сегодня|Последние 2 дня|Последние 3 дня|Последние 4 дня|Последние 5 дней" default="2"/>
+		<setting id="tskg_news_count" type="enum" label="<Последние поступления> за период" values="Сегодня|Последние 2 дня|Последние 3 дня|Последние 4 дня|Последние 5 дней" default="2"/>
         <!-- HIDDEN STUFF -->
         <setting id="ga_time" type="text" label="GA Called"  default="2000-01-01 00:00:00" visible="false"/>
         <setting id="ga_vstr" type="text" label="GA visitor" default=""                    visible="false"/>

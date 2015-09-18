@@ -115,7 +115,8 @@ class HTTPRequest(object):
             return False
 
     def cache_request(self, request):
-        record = (Time.now(), request.get_full_url(), request.get_data(), request.headers)
+        # TODO: implement a proper caching mechanism here for re-transmitting hits
+        # record = (Time.now(), request.get_full_url(), request.get_data(), request.headers)
         pass
 
 
@@ -153,36 +154,24 @@ class Tracker(object):
         for i in names:
             cls.parameter_alias[ i ] = (typemap, base)
 
-
     @classmethod
-    def getparam(cls, name): 
-        """ Clean up parameter names, translate parameter aliases as needed """
-        if name and name[0] == '&':
-            return name[1:]
+    def coerceParameter(cls, name, value = None):
+        if isinstance(name, basestring) and name[0] == '&':
+            return name[1:], str(value)
+        elif name in cls.parameter_alias:
+            typecast, param_name = cls.parameter_alias.get(name)
+            return param_name, typecast(value)
         else:
-            return cls.parameter_alias.get(name, None)
+            raise KeyError, 'Parameter "{0}" is not recognized'.format(name)
 
-
-    @classmethod
-    def setparam(cls, params, name, value): 
-        """ Store or remove persistent values in tracker state (dictionary) """
-        param = cls.getparam(name)
-        if param is not None:
-            if value is None:
-                del params[ param ]
-            else:
-                params[ param ] = value
-
-
-    @classmethod
-    def payload_map(cls, data):
-        for k, v in data.iteritems():
-            if k in cls.parameter_alias:
-                yield v, cls.parameter_alias[ k ]
 
     def payload(self, data):
-        for v, k in self.payload_map(data):
-            yield k[1], k[0](v) 
+        for key, value in data.iteritems():
+            try:
+                yield self.coerceParameter(key, value)
+            except KeyError:
+                continue
+
 
 
     option_sequence = {
@@ -210,7 +199,7 @@ class Tracker(object):
     def hittime(cls, timestamp = None, age = None, milliseconds = None):
         """ Returns an integer represeting the milliseconds offset for a given hit (relative to now) """
         if isinstance(timestamp, (int, float)):
-            return int(Time.miliseconds_offset(Time.from_unix(timestamp, milliseconds = milliseconds)))
+            return int(Time.milliseconds_offset(Time.from_unix(timestamp, milliseconds = milliseconds)))
         if isinstance(timestamp, datetime.datetime):
             return int(Time.milliseconds_offset(timestamp))
         if isinstance(age, (int, float)):
@@ -239,7 +228,7 @@ class Tracker(object):
 
         self.hash_client_id = hash_client_id
 
-        if user_id:
+        if user_id is not None:
             self.params[ 'uid' ] = user_id
 
 
@@ -265,9 +254,9 @@ class Tracker(object):
                 for key, val in self.payload(item):
                     data[ key ] = val
 
-        for k in self.params: # update only absent parameters
+        for k, v in self.params.iteritems(): # update only absent parameters
             if k not in data:
-                data[ k ] = self.params[ k ]
+                data[ k ] = v
 
    
         data = dict(self.payload(data))
@@ -285,108 +274,178 @@ class Tracker(object):
     def set(self, name, value = None):
         if isinstance(name, dict):
             for key, value in name.iteritems():
-                self.setparam(self.params, key, value)
+                try:
+                    param, value = self.coerceParameter(key, value)
+                    self.params[param] = value
+                except KeyError:
+                    pass 
         elif isinstance(name, basestring):
-            self.setparam(self.params, name, value)
+            try:
+                param, value = self.coerceParameter(name, value)
+                self.params[param] = value
+            except KeyError:
+                pass 
+
 
 
     def __getitem__(self, name):
-        return self.params.get(self.getparam(name), None)
+        param, value = self.coerceParameter(name, None)
+        return self.params.get(param, None)
 
     def __setitem__(self, name, value):
-        self.setparam(self.params, name, value)
+        param, value = self.coerceParameter(name, value)
+        self.params[param] = value
 
     def __delitem__(self, name):
-        self.setparam(self.params, name, None)
+        param, value = self.coerceParameter(name, None)
+        if param in self.params:
+            del self.params[param]
 
-
+def safe_unicode(obj):
+    """ Safe convertion to the Unicode string version of the object """
+    try:
+        return unicode(obj)
+    except UnicodeDecodeError:
+        return obj.decode('utf-8')
 
 
 # Declaring name mappings for Measurement Protocol parameters
+MAX_CUSTOM_DEFINITIONS = 200
+MAX_EC_LISTS = 11  # 1-based index
+MAX_EC_PRODUCTS = 11  # 1-based index
+MAX_EC_PROMOTIONS = 11 # 1-based index
+
 Tracker.alias(int, 'v', 'protocol-version')
-Tracker.alias(str, 'cid', 'client-id', 'clientId', 'clientid')
-Tracker.alias(str, 'tid', 'trackingId', 'account')
-Tracker.alias(str, 'uid', 'user-id', 'userId', 'userid')
-Tracker.alias(str, 'uip', 'user-ip', 'userIp', 'ipaddr')
-Tracker.alias(str, 'ua', 'userAgent', 'userAgentOverride', 'user-agent')
-Tracker.alias(str, 'dp', 'page', 'path')
-Tracker.alias(str, 'dt', 'title', 'pagetitle', 'pageTitle' 'page-title')
-Tracker.alias(str, 'dl', 'location')
-Tracker.alias(str, 'dh', 'hostname')
-Tracker.alias(str, 'sc', 'sessioncontrol', 'session-control', 'sessionControl')
-Tracker.alias(str, 'dr', 'referrer', 'referer')
+Tracker.alias(safe_unicode, 'cid', 'client-id', 'clientId', 'clientid')
+Tracker.alias(safe_unicode, 'tid', 'trackingId', 'account')
+Tracker.alias(safe_unicode, 'uid', 'user-id', 'userId', 'userid')
+Tracker.alias(safe_unicode, 'uip', 'user-ip', 'userIp', 'ipaddr')
+Tracker.alias(safe_unicode, 'ua', 'userAgent', 'userAgentOverride', 'user-agent')
+Tracker.alias(safe_unicode, 'dp', 'page', 'path')
+Tracker.alias(safe_unicode, 'dt', 'title', 'pagetitle', 'pageTitle' 'page-title')
+Tracker.alias(safe_unicode, 'dl', 'location')
+Tracker.alias(safe_unicode, 'dh', 'hostname')
+Tracker.alias(safe_unicode, 'sc', 'sessioncontrol', 'session-control', 'sessionControl')
+Tracker.alias(safe_unicode, 'dr', 'referrer', 'referer')
 Tracker.alias(int, 'qt', 'queueTime', 'queue-time')
-Tracker.alias(str, 't', 'hitType', 'hittype')
+Tracker.alias(safe_unicode, 't', 'hitType', 'hittype')
 Tracker.alias(int, 'aip', 'anonymizeIp', 'anonIp', 'anonymize-ip')
 
 
 # Campaign attribution
-Tracker.alias(str, 'cn', 'campaign', 'campaignName', 'campaign-name')
-Tracker.alias(str, 'cs', 'source', 'campaignSource', 'campaign-source')
-Tracker.alias(str, 'cm', 'medium', 'campaignMedium', 'campaign-medium')
-Tracker.alias(str, 'ck', 'keyword', 'campaignKeyword', 'campaign-keyword')
-Tracker.alias(str, 'cc', 'content', 'campaignContent', 'campaign-content')
-Tracker.alias(str, 'ci', 'campaignId', 'campaignID', 'campaign-id')
+Tracker.alias(safe_unicode, 'cn', 'campaign', 'campaignName', 'campaign-name')
+Tracker.alias(safe_unicode, 'cs', 'source', 'campaignSource', 'campaign-source')
+Tracker.alias(safe_unicode, 'cm', 'medium', 'campaignMedium', 'campaign-medium')
+Tracker.alias(safe_unicode, 'ck', 'keyword', 'campaignKeyword', 'campaign-keyword')
+Tracker.alias(safe_unicode, 'cc', 'content', 'campaignContent', 'campaign-content')
+Tracker.alias(safe_unicode, 'ci', 'campaignId', 'campaignID', 'campaign-id')
 
 # Technical specs
-Tracker.alias(str, 'sr', 'screenResolution', 'screen-resolution', 'resolution')
-Tracker.alias(str, 'vp', 'viewport', 'viewportSize', 'viewport-size')
-Tracker.alias(str, 'de', 'encoding', 'documentEncoding', 'document-encoding')
+Tracker.alias(safe_unicode, 'sr', 'screenResolution', 'screen-resolution', 'resolution')
+Tracker.alias(safe_unicode, 'vp', 'viewport', 'viewportSize', 'viewport-size')
+Tracker.alias(safe_unicode, 'de', 'encoding', 'documentEncoding', 'document-encoding')
 Tracker.alias(int, 'sd', 'colors', 'screenColors', 'screen-colors')
-Tracker.alias(str, 'ul', 'language', 'user-language', 'userLanguage')
+Tracker.alias(safe_unicode, 'ul', 'language', 'user-language', 'userLanguage')
 
 # Mobile app
-Tracker.alias(str, 'an', 'appName', 'app-name', 'app')
-Tracker.alias(str, 'cd', 'contentDescription', 'screenName', 'screen-name', 'content-description')
-Tracker.alias(str, 'av', 'appVersion', 'app-version', 'version')
-Tracker.alias(str, 'aid', 'appID', 'appId', 'application-id', 'app-id', 'applicationId')
-Tracker.alias(str, 'aiid', 'appInstallerId', 'app-installer-id')
+Tracker.alias(safe_unicode, 'an', 'appName', 'app-name', 'app')
+Tracker.alias(safe_unicode, 'cd', 'contentDescription', 'screenName', 'screen-name', 'content-description')
+Tracker.alias(safe_unicode, 'av', 'appVersion', 'app-version', 'version')
+Tracker.alias(safe_unicode, 'aid', 'appID', 'appId', 'application-id', 'app-id', 'applicationId')
+Tracker.alias(safe_unicode, 'aiid', 'appInstallerId', 'app-installer-id')
 
 # Ecommerce
-Tracker.alias(str, 'ta', 'affiliation', 'transactionAffiliation', 'transaction-affiliation')
-Tracker.alias(str, 'ti', 'transaction', 'transactionId', 'transaction-id')
+Tracker.alias(safe_unicode, 'ta', 'affiliation', 'transactionAffiliation', 'transaction-affiliation')
+Tracker.alias(safe_unicode, 'ti', 'transaction', 'transactionId', 'transaction-id')
 Tracker.alias(float, 'tr', 'revenue', 'transactionRevenue', 'transaction-revenue')
 Tracker.alias(float, 'ts', 'shipping', 'transactionShipping', 'transaction-shipping')
 Tracker.alias(float, 'tt', 'tax', 'transactionTax', 'transaction-tax')
-Tracker.alias(str, 'cu', 'currency', 'transactionCurrency', 'transaction-currency') # Currency code, e.g. USD, EUR
-Tracker.alias(str, 'in', 'item-name', 'itemName')
+Tracker.alias(safe_unicode, 'cu', 'currency', 'transactionCurrency', 'transaction-currency') # Currency code, e.g. USD, EUR
+Tracker.alias(safe_unicode, 'in', 'item-name', 'itemName')
 Tracker.alias(float, 'ip', 'item-price', 'itemPrice')
 Tracker.alias(float, 'iq', 'item-quantity', 'itemQuantity')
-Tracker.alias(str, 'ic', 'item-code', 'sku', 'itemCode')
-Tracker.alias(str, 'iv', 'item-variation', 'item-category', 'itemCategory', 'itemVariation')
+Tracker.alias(safe_unicode, 'ic', 'item-code', 'sku', 'itemCode')
+Tracker.alias(safe_unicode, 'iv', 'item-variation', 'item-category', 'itemCategory', 'itemVariation')
 
 # Events
-Tracker.alias(str, 'ec', 'event-category', 'eventCategory', 'category')
-Tracker.alias(str, 'ea', 'event-action', 'eventAction', 'action')
-Tracker.alias(str, 'el', 'event-label', 'eventLabel', 'label')
+Tracker.alias(safe_unicode, 'ec', 'event-category', 'eventCategory', 'category')
+Tracker.alias(safe_unicode, 'ea', 'event-action', 'eventAction', 'action')
+Tracker.alias(safe_unicode, 'el', 'event-label', 'eventLabel', 'label')
 Tracker.alias(int, 'ev', 'event-value', 'eventValue', 'value')
 Tracker.alias(int, 'ni', 'noninteractive', 'nonInteractive', 'noninteraction', 'nonInteraction')
 
 
 # Social
-Tracker.alias(str, 'sa', 'social-action', 'socialAction')
-Tracker.alias(str, 'sn', 'social-network', 'socialNetwork')
-Tracker.alias(str, 'st', 'social-target', 'socialTarget')
+Tracker.alias(safe_unicode, 'sa', 'social-action', 'socialAction')
+Tracker.alias(safe_unicode, 'sn', 'social-network', 'socialNetwork')
+Tracker.alias(safe_unicode, 'st', 'social-target', 'socialTarget')
 
 # Exceptions
-Tracker.alias(str, 'exd', 'exception-description', 'exceptionDescription', 'exDescription')
+Tracker.alias(safe_unicode, 'exd', 'exception-description', 'exceptionDescription', 'exDescription')
 Tracker.alias(int, 'exf', 'exception-fatal', 'exceptionFatal', 'exFatal')
 
 # User Timing
-Tracker.alias(str, 'utc', 'timingCategory', 'timing-category')
-Tracker.alias(str, 'utv', 'timingVariable', 'timing-variable')
+Tracker.alias(safe_unicode, 'utc', 'timingCategory', 'timing-category')
+Tracker.alias(safe_unicode, 'utv', 'timingVariable', 'timing-variable')
 Tracker.alias(float, 'utt', 'time', 'timingTime', 'timing-time')
-Tracker.alias(str, 'utl', 'timingLabel', 'timing-label')
+Tracker.alias(safe_unicode, 'utl', 'timingLabel', 'timing-label')
 Tracker.alias(float, 'dns', 'timingDNS', 'timing-dns')
 Tracker.alias(float, 'pdt', 'timingPageLoad', 'timing-page-load')
 Tracker.alias(float, 'rrt', 'timingRedirect', 'timing-redirect')
-Tracker.alias(str, 'tcp', 'timingTCPConnect', 'timing-tcp-connect')
-Tracker.alias(str, 'srt', 'timingServerResponse', 'timing-server-response')
+Tracker.alias(safe_unicode, 'tcp', 'timingTCPConnect', 'timing-tcp-connect')
+Tracker.alias(safe_unicode, 'srt', 'timingServerResponse', 'timing-server-response')
 
 # Custom dimensions and metrics
 for i in range(0,200):
-    Tracker.alias(str, 'cd{0}'.format(i), 'dimension{0}'.format(i))
+    Tracker.alias(safe_unicode, 'cd{0}'.format(i), 'dimension{0}'.format(i))
     Tracker.alias(int, 'cm{0}'.format(i), 'metric{0}'.format(i))
+
+# Enhanced Ecommerce
+Tracker.alias(str, 'pa')  # Product action
+Tracker.alias(str, 'tcc')  # Coupon code
+Tracker.alias(unicode, 'pal')  # Product action list
+Tracker.alias(int, 'cos')  # Checkout step
+Tracker.alias(str, 'col')  # Checkout step option
+
+Tracker.alias(str, 'promoa')  # Promotion action
+
+for product_index in range(1, MAX_EC_PRODUCTS):
+    Tracker.alias(str, 'pr{0}id'.format(product_index))  # Product SKU
+    Tracker.alias(unicode, 'pr{0}nm'.format(product_index))  # Product name
+    Tracker.alias(unicode, 'pr{0}br'.format(product_index))  # Product brand
+    Tracker.alias(unicode, 'pr{0}ca'.format(product_index))  # Product category
+    Tracker.alias(unicode, 'pr{0}va'.format(product_index))  # Product variant
+    Tracker.alias(str, 'pr{0}pr'.format(product_index))  # Product price
+    Tracker.alias(int, 'pr{0}qt'.format(product_index))  # Product quantity
+    Tracker.alias(str, 'pr{0}cc'.format(product_index))  # Product coupon code
+    Tracker.alias(int, 'pr{0}ps'.format(product_index))  # Product position
+    
+    for custom_index in range(MAX_CUSTOM_DEFINITIONS):
+        Tracker.alias(str, 'pr{0}cd{1}'.format(product_index, custom_index))  # Product custom dimension
+        Tracker.alias(int, 'pr{0}cm{1}'.format(product_index, custom_index))  # Product custom metric
+
+    for list_index in range(1, MAX_EC_LISTS):
+        Tracker.alias(str, 'il{0}pi{1}id'.format(list_index, product_index))  # Product impression SKU
+        Tracker.alias(unicode, 'il{0}pi{1}nm'.format(list_index, product_index))  # Product impression name
+        Tracker.alias(unicode, 'il{0}pi{1}br'.format(list_index, product_index))  # Product impression brand
+        Tracker.alias(unicode, 'il{0}pi{1}ca'.format(list_index, product_index))  # Product impression category
+        Tracker.alias(unicode, 'il{0}pi{1}va'.format(list_index, product_index))  # Product impression variant
+        Tracker.alias(int, 'il{0}pi{1}ps'.format(list_index, product_index))  # Product impression position
+        Tracker.alias(int, 'il{0}pi{1}pr'.format(list_index, product_index))  # Product impression price
+
+        for custom_index in range(MAX_CUSTOM_DEFINITIONS):
+            Tracker.alias(str, 'il{0}pi{1}cd{2}'.format(list_index, product_index, custom_index))  # Product impression custom dimension
+            Tracker.alias(int, 'il{0}pi{1}cm{2}'.format(list_index, product_index, custom_index))  # Product impression custom metric
+
+for list_index in range(1, MAX_EC_LISTS):
+    Tracker.alias(unicode, 'il{0}nm'.format(list_index))  # Product impression list name
+
+for promotion_index in range(1, MAX_EC_PROMOTIONS):
+    Tracker.alias(str, 'promo{0}id'.format(promotion_index))  # Promotion ID
+    Tracker.alias(unicode, 'promo{0}nm'.format(promotion_index))  # Promotion name
+    Tracker.alias(str, 'promo{0}cr'.format(promotion_index))  # Promotion creative
+    Tracker.alias(str, 'promo{0}ps'.format(promotion_index))  # Promotion position
+
 
 # Shortcut for creating trackers
 def create(account, *args, **kwargs):
