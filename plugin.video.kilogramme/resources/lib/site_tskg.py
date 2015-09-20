@@ -176,7 +176,7 @@ def get_lastadded(url):
                                 ep_id = common.parseDOM(ep_html, 'input', attrs={'id': 'episode_id_input'}, ret='value')
                                 ep_json = getEpisode(ep_id[0])
 
-                                temp = ep_json['file']['hls'] if ep_json['file']['is_hls'] else ep_json['file']['mp4']
+                                temp = ep_json['file']['url']# if ep_json['file']['is_hls'] else ep_json['file']['mp4']
                                 play_url = temp + UserAgent
                                 info = {
                                     'duration': ep_json['duration'] / 60  # seconds to minutes
@@ -342,7 +342,7 @@ def get_videos_by_season(url, title, season):
                 
                 icon = ''
                 ep_json = getEpisode(item['id'])
-                temp = ep_json['file']['hls'] if ep_json['file']['is_hls'] else ep_json['file']['mp4']
+                temp = ep_json['file']['url']# if ep_json['file']['is_hls'] else ep_json['file']['mp4']
                 href = temp
                 items.append({'title': label, 'url': href, 'icon': icon})
 
