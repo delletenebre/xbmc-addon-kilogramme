@@ -130,7 +130,7 @@ def get_lastadded(url):
     items = []
     try:
         result = common.fetchPage({'link': url})
-        kg_stats(url, GA_CODE, NK_CODE)
+        #kg_stats(url, GA_CODE, NK_CODE)
 
         if result['status'] == 200:
             html = result['content']
@@ -200,7 +200,7 @@ def get_lastadded(url):
 # method
 def get_categories(url):
     items = []
-    kg_stats(url, GA_CODE, NK_CODE)
+    #kg_stats(url, GA_CODE, NK_CODE)
     try:
         result = common.fetchPage({
             'link': url,
@@ -243,7 +243,7 @@ def get_tvshows(url):
                                            ('User-Agent',
                                             'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36'),
                                        ]})
-            kg_stats(url, GA_CODE, NK_CODE)
+            #kg_stats(url, GA_CODE, NK_CODE)
 
             if result['status'] == 200:
                 html = result['content']
@@ -286,7 +286,7 @@ def get_seasons(url, title):
     url_prefix = ''
     try:
         result = common.fetchPage({'link': url})
-        kg_stats(url, GA_CODE, NK_CODE)
+        #kg_stats(url, GA_CODE, NK_CODE)
 
         if result['status'] == 200:
             html = result['content']
@@ -314,7 +314,7 @@ def get_videos_by_season(url, title, season):
                                        ('User-Agent',
                                         'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.134 Safari/537.36'),
                                    ]})
-        kg_stats(url, GA_CODE, NK_CODE)
+        #kg_stats(url, GA_CODE, NK_CODE)
 
         if result['status'] == 200:
             html = result['content']

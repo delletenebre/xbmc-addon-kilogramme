@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import urllib, json
+import urllib, json, traceback
 from _header import *
 
 ontvkg_logn = plugin.get_setting('ontvkg_logn', str)
@@ -8,44 +8,42 @@ ontvkg_pass = plugin.get_setting('ontvkg_pass', str)
 ontvkg_ppin = plugin.get_setting('ontvkg_ppin', str)
 ontvkg_lang = plugin.get_setting('ontvkg_lang', str)
 
-BASE_URL      = 'http://77.235.18.146/'
 BASE_NAME     = 'Online TV'
 BASE_LABEL    = 'ontvkg'
-BASE_AUTH_URL = 'http://77.235.18.146/Auth/Login'
-COOKIE        = ''
+
+OTV_URL = 'http://www.onlinetv.kg/';
+STB_API_URL = OTV_URL + 'STBService/';
+XML_API_URL = OTV_URL + 'XMLService/';
+COOKIES = False;
 
 def get_ontvkg_cookie():
-    result = ''
-    cookie = plugin.get_storage(BASE_LABEL, TTL = 360)
-    
+    result = False
+    cookies = plugin.get_storage(BASE_LABEL, TTL = 360)
+
     try:
-        result = cookie['auth']
+        result = cookies['auth']
+
     except:
-        #try:
-        #auth   = common.fetchPage({'link': BASE_AUTH_URL, 'post_data':{'UserName':ontvkg_logn, 'Password':ontvkg_pass, 'RememberMe':'true'}})
-        auth   = common.fetchPage({
-            'link': BASE_AUTH_URL,
-            'post_data':json.dumps({'UserName':ontvkg_logn,'Password':ontvkg_pass,'RememberMe':'true'}),
-            'headers' : [
-                ('Content-Type','application/json; charset=utf-8'),
-                ('User-Agent','Mozilla/5.0 (Windows NT 6.3; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36 OPR/23.0.1522.60'),
-            ],
+        r = common.fetchPage({
+            'link': XML_API_URL + 'Login/' + urllib.quote_plus(ontvkg_logn) + '/' + urllib.quote_plus(ontvkg_pass) + '/true',
         })
 
-        for h in auth['header']:
-            if h.find('Set-Cookie') > -1:
-                result = h.replace('Set-Cookie: ', '').replace(' HttpOnly,', '').replace(' HttpOnly', '')
-        #except: pass
-    
+        if r['status'] == 200:
+            for h in r['header']:
+                if h.find('Set-Cookie') > -1:
+                    result = h.replace('Set-Cookie: ', '').replace(' HttpOnly', '')
+                    cookies['auth'] = result
+                    cookies.sync()
+
     return result
 
 
 @plugin.route('/site/' + BASE_LABEL)
 def ontvkg_index():
     items = []
-    COOKIE = get_ontvkg_cookie()
-    if not COOKIE:
-        plugin.notify('Ошибочная авторизация', 'OnlineTV.kg', image=get_local_icon('noty_' + BASE_LABEL))
+    COOKIES = get_ontvkg_cookie()
+    if not COOKIES:
+        plugin.notify('Ошибка авторизации', 'OnlineTV.kg', image=get_local_icon('noty_' + BASE_LABEL))
     else:
         items = [{
             'label': set_color('Просмотр ТВ', 'light'),
@@ -61,7 +59,7 @@ def ontvkg_index():
             'path' : plugin.url_for('ontvkg_genres'),
             'icon' : '',
         }]
-    
+
     return items
 
 
@@ -107,7 +105,7 @@ def ontvkg_shows_by_genre(type, id, page):
                 'path' : plugin.url_for('ontvkg_shows_by_genre_pagination', type = type, id = id, page = item['page']) if item['search'] == False else plugin.url_for('ontvkg_go_to_page', type = type, id = id, page = item['page']),
                 'icon' : item['icon'],
             })
-    
+
     if(page == '1'):
         return items
     else:
@@ -152,80 +150,114 @@ def ontvkg_search():
 #method
 def get_channels():
     items = []
-    COOKIE = get_ontvkg_cookie()
+    COOKIES = get_ontvkg_cookie()
     try:
         cache = plugin.get_storage(BASE_LABEL, TTL = 360)
         return cache['channels']
-    except: plugin.notify('Пожалуйста, подождите...', 'OnlineTV.kg', 10000, get_local_icon('noty_' + BASE_LABEL))
-    
-    #try:
-    result = common.fetchPage({'link': BASE_URL + 'XMLService/Groups', 'cookie':COOKIE})
-    if result['status'] == 200:
-        xml = result['content']
-        channel_group = {
-            'id'  : common.parseDOM(xml, 'group', ret = 'id'),
-            'name': common.parseDOM(xml, 'group', ret = 'name'),
-        }
-        for i in range(0, len(channel_group['id'])):
-            result = common.fetchPage({'link': BASE_URL + 'XMLService/GroupChannels/' + channel_group['id'][i], 'cookie':COOKIE})
-            if result['status'] == 200:
-                xml = result['content']
-                channel = {
-                    'id'           : common.parseDOM(xml, 'channel', ret = 'id'),
-                    'channelNumber': common.parseDOM(xml, 'channel', ret = 'channelNumber'),
-                    'name'         : common.parseDOM(xml, 'channel', ret = 'name'),
-                    'tId'          : common.parseDOM(xml, 'channel', ret = 'tId'),
-                    'tName'        : common.parseDOM(xml, 'channel', ret = 'tName'),
-                    'tDescription' : common.parseDOM(xml, 'channel', ret = 'tDescription'),
-                }
-            
-                for j in range(0, len(channel['id'])):
-                    title = common.replaceHTMLCodes( '[' + channel_group['name'][i] + ']&emsp;' + set_color(channel['name'][j], 'bold') )
+    except:
+        plugin.notify('Пожалуйста, подождите...', 'OnlineTV.kg', 2000, get_local_icon('noty_' + BASE_LABEL))
 
-                    
-                    result = common.fetchPage({'link': BASE_URL + 'XMLService/LanguagesByChannelId/' + channel['id'][j], 'cookie':COOKIE})
-                    if result['status'] == 200:
-                        xml = result['content']
-                        transmission = {
-                            'name': common.parseDOM(xml, 'transmission', ret = 'name'),
-                            'url' : common.parseDOM(xml, 'transmission', ret = 'url'),
-                        }
-                        
-                        url = transmission['url'][0]
-                        for l in range(0, len(transmission['name'])):
-                            if(transmission['name'][l] == ontvkg_lang):
-                                url = transmission['url'][l]
-                                xbmc.log(url + ' - ' + channel['id'][j])
-                                    
-                    
-                    items.append({'title':title, 'url':url, 'icon':get_local_icon('onlinetv/'+channel['id'][j])})
-                    cache['channels'] = items
-    #except: pass
+    try:
+        r = common.fetchPage({
+            'link': XML_API_URL + 'Groups',
+            'cookie': COOKIES
+        })
+
+        if r['status'] == 200:
+            xml = r['content']
+            tag = 'group'
+            categories = {
+                'id'  : common.parseDOM(xml, tag, ret = 'id'),
+                'name': common.parseDOM(xml, tag, ret = 'name'),
+            }
+
+            for i in range(0, len(categories['id'])):
+                r = common.fetchPage({
+                    'link': XML_API_URL + 'GroupChannels/' + categories['id'][i],
+                    'cookie': COOKIES
+                })
+
+                if r['status'] == 200:
+                    xml = r['content']
+                    tag = 'channel'
+                    data = {
+                        'id'           : common.parseDOM(xml, tag, ret = 'id'),
+                        'channelNumber': common.parseDOM(xml, tag, ret = 'channelNumber'),
+                        'name'         : common.parseDOM(xml, tag, ret = 'name'),
+                        'tId'          : common.parseDOM(xml, tag, ret = 'tId'),
+                        'tName'        : common.parseDOM(xml, tag, ret = 'tName'),
+                        'tDescription' : common.parseDOM(xml, tag, ret = 'tDescription'),
+                    }
+
+                    for j in range(0, len(data['id'])):
+                        title = common.replaceHTMLCodes( '[' + categories['name'][i] + ']&emsp;' + set_color(data['name'][j], 'bold') )
+
+
+                        r = common.fetchPage({
+                            'link': XML_API_URL + 'LanguagesByChannelId/' + data['id'][j],
+                            'cookie':COOKIES
+                        })
+
+                        if r['status'] == 200:
+                            xml = r['content']
+                            tag = 'transmission'
+                            transmissions = {
+                                'name': common.parseDOM(xml, tag, ret = 'name'),
+                                'url' : common.parseDOM(xml, tag, ret = 'url'),
+                            }
+
+                            url = transmissions['url'][0]
+                            for l in range(0, len(transmissions['name'])):
+                                if(transmissions['name'][l] == ontvkg_lang):
+                                    url = transmissions['url'][l]
+
+                        items.append({
+                            'title': title,
+                            'url': url,
+                            'icon': get_local_icon('onlinetv/'+data['id'][j])
+                        })
+
+                        cache['channels'] = items
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return items
 
 
 #method
 def get_genres():
     items = []
-    COOKIE = get_ontvkg_cookie()
+    COOKIES = get_ontvkg_cookie()
     try:
         cache = plugin.get_storage(BASE_LABEL, TTL = 360)
         return cache['genres']
+
     except:
         try:
-            result = common.fetchPage({'link': BASE_URL + 'XMLService/Genres', 'cookie':COOKIE})
-            if result['status'] == 200:
-                xml = result['content']
-                genres = {
-                    'id'                : common.parseDOM(xml, 'genre', ret = 'id'),
-                    'name'              : common.parseDOM(xml, 'genre', ret = 'name'),
-                    'IsParentControlled': common.parseDOM(xml, 'genre', ret = 'IsParentControlled'),
+            r = common.fetchPage({
+                'link': XML_API_URL + 'Genres',
+                'cookie':COOKIES
+            })
+
+            if r['status'] == 200:
+                xml = r['content']
+                tag = 'genre'
+                data = {
+                    'id'                : common.parseDOM(xml, tag, ret = 'id'),
+                    'name'              : common.parseDOM(xml, tag, ret = 'name'),
+                    'IsParentControlled': common.parseDOM(xml, tag, ret = 'IsParentControlled'),
                 }
-                for i in range(0, len(genres['id'])):
-                    items.append({'label':genres['name'][i], 'id':genres['id'][i], 'icon':''})
-                    
+                for i in range(0, len(data['id'])):
+                    items.append({
+                        'label': data['name'][i],
+                        'id': data['id'][i],
+                        'icon': ''
+                    })
+
                 cache['genres'] = items
-        except: pass
+        except:
+            xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return items
 
 
@@ -233,17 +265,21 @@ def get_genres():
 def get_shows_by_genre(id, page, type = 'genre'):
     items = []
     pagination_items = []
-    COOKIE = get_ontvkg_cookie()
-    
+    COOKIES = get_ontvkg_cookie()
+
     try:
         if type == 'genre':
-            link = BASE_URL + 'XMLService/TransmissionsByGenreId/' + str(int(id)) + '/' + str(int(page)) + '/24'
+            link = 'TransmissionsByGenreId/' + str(int(id)) + '/' + str(int(page)) + '/24'
         else:
-            link = BASE_URL + 'XMLService/TransmissionsSearch/' + urllib.quote(str(id)) + '/' + str(int(page)) + '/24'
+            link = 'TransmissionsSearch/' + urllib.quote(str(id)) + '/' + str(int(page)) + '/24'
 
-        result = common.fetchPage({'link': link, 'cookie':COOKIE})
-        if result['status'] == 200:
-            xml = result['content']
+        r = common.fetchPage({
+            'link': XML_API_URL + link,
+            'cookie': COOKIES
+        })
+
+        if r['status'] == 200:
+            xml = r['content']
 
             #======== pagination ========#
             try:
@@ -253,7 +289,7 @@ def get_shows_by_genre(id, page, type = 'genre'):
                 }
                 if pages['total'] < pages['current']:
                     pages['current'] = pages['total']
-                
+
                 if pages['current'] > 1:
                     pagination_items.append({
                         'label' : set_color('[ Предыдущая страница ]'.decode('utf-8'), 'next', True),
@@ -275,65 +311,93 @@ def get_shows_by_genre(id, page, type = 'genre'):
                         'page'  : pages['current'],
                         'search': True
                     })
-            except: pass
+            except:
+                xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
             #======== END pagination ========#
 
-            shows = {
-                'id'     : common.parseDOM(xml, 'transmission', ret = 'id'),
-                'name'   : common.parseDOM(xml, 'transmission', ret = 'name'),
-                'date'   : common.parseDOM(xml, 'transmission', ret = 'date'),
-                'time_h' : common.parseDOM(xml, 'transmission', ret = 'hour'),
-                'time_m' : common.parseDOM(xml, 'transmission', ret = 'minute'),
-                'trCount': common.parseDOM(xml, 'transmission', ret = 'transmissionsCount'),
+            tag = 'transmission'
+            data = {
+                'id'     : common.parseDOM(xml, tag, ret = 'id'),
+                'name'   : common.parseDOM(xml, tag, ret = 'name'),
+                'date'   : common.parseDOM(xml, tag, ret = 'date'),
+                'time_h' : common.parseDOM(xml, tag, ret = 'hour'),
+                'time_m' : common.parseDOM(xml, tag, ret = 'minute'),
+                'trCount': common.parseDOM(xml, tag, ret = 'transmissionsCount'),
             }
-            for i in range(0, len(shows['id'])):
+            for i in range(0, len(data['id'])):
                 try:
-                    date  = shows['date'][i] + ' ' + shows['time_h'][i] + ':' + shows['time_m'][i]
-                    label = common.replaceHTMLCodes( date + '&emsp;' + shows['name'][i] )
+                    date  = data['date'][i] + ' ' + data['time_h'][i] + ':' + data['time_m'][i]
+                    label = common.replaceHTMLCodes( date + '&emsp;' + data['name'][i] )
                 except:
-                    label = common.replaceHTMLCodes( shows['name'][i] )
+                    label = common.replaceHTMLCodes( data['name'][i] )
 
-                items.append({'label':label, 'id':shows['id'][i], 'icon':'', 'is_playable':True if shows['trCount'][i] == '1' else False})
-    except: pass
-    return {'items':items, 'pagination':pagination_items}
+                items.append({
+                    'label': label,
+                    'id':    data['id'][i],
+                    'icon':  '',
+                    'is_playable': True if data['trCount'][i] == '1' else False
+                })
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
+    return {
+        'items': items,
+        'pagination': pagination_items
+    }
 
 
 #method
 def get_transmission_group(genre_id, id):
+    print XML_API_URL + 'TransmissionsByGenreGroupedTransmissionId/' + str(int(genre_id)) + '/' + str(int(id)) + '/1/100'
     items = []
-    COOKIE = get_ontvkg_cookie()
-    
+    COOKIES = get_ontvkg_cookie()
+
     try:
-        result = common.fetchPage({'link': BASE_URL + 'XMLService/TransmissionsByGenreGroupedTransmissionId/' + str(int(genre_id)) + '/' + str(int(id)) + '/1/100', 'cookie':COOKIE})
-        if result['status'] == 200:
-            xml = result['content']
-            shows = {
-                'id'    : common.parseDOM(xml, 'transmission', ret = 'id'),
-                'name'  : common.parseDOM(xml, 'transmission', ret = 'name'),
-                'desc'  : common.parseDOM(xml, 'transmission', ret = 'description'),
-                'date'  : common.parseDOM(xml, 'transmission', ret = 'date'),
-                'time_h': common.parseDOM(xml, 'transmission', ret = 'hour'),
-                'time_m': common.parseDOM(xml, 'transmission', ret = 'minute'),
+        r = common.fetchPage({
+            'link': XML_API_URL + 'TransmissionsByGenreGroupedTransmissionId/' + str(int(genre_id)) + '/' + str(int(id)) + '/1/100',
+            'cookie':COOKIES
+        })
+
+        if r['status'] == 200:
+            xml = r['content']
+            tag = 'transmission'
+            data = {
+                'id'    : common.parseDOM(xml, tag, ret = 'id'),
+                'name'  : common.parseDOM(xml, tag, ret = 'name'),
+                'desc'  : common.parseDOM(xml, tag, ret = 'description'),
+                'date'  : common.parseDOM(xml, tag, ret = 'date'),
+                'time_h': common.parseDOM(xml, tag, ret = 'hour'),
+                'time_m': common.parseDOM(xml, tag, ret = 'minute'),
             }
 
-            for i in range(0, len(shows['id'])):
-                date  = shows['date'][i] + ' ' + shows['time_h'][i] + ':' + shows['time_m'][i]
-                label = common.replaceHTMLCodes( date + '&emsp;' + shows['name'][i].title() + ': ' + shows['desc'][i].title() )
-                id    = shows['id'][i]
+            for i in range(0, len(data['id'])):
+                date  = data['date'][i] + ' ' + data['time_h'][i] + ':' + data['time_m'][i]
+                label = common.replaceHTMLCodes( date + '&emsp;' + data['name'][i].title() + ': ' + data['desc'][i].title() )
+                id    = data['id'][i]
 
-                items.append({'title':label, 'url':get_transmission_url(id), 'icon':''})
-    except: pass
+                items.append({
+                    'title': label,
+                    'url':   get_transmission_url(id),
+                    'icon':  ''
+                })
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return items
 
 
 #method
 def get_transmission_url(id):
-    COOKIE = get_ontvkg_cookie()
-    
+    COOKIES = get_ontvkg_cookie()
+
     try:
-        result = common.fetchPage({'link': BASE_URL + 'XMLService/LanguagesByTransmissionId/' + str(int(id)), 'cookie':COOKIE})
-        if result['status'] == 200:
-            xml = result['content']
+        r = common.fetchPage({
+            'link': XML_API_URL + 'LanguagesByTransmissionId/' + str(int(id)),
+            'cookie': COOKIES
+        })
+
+        if r['status'] == 200:
+            xml = r['content']
 
             controll = {
                 'is_controlled': common.parseDOM(xml, 'languages', ret = 'IsParentControlled')[0],
@@ -343,12 +407,15 @@ def get_transmission_url(id):
                 'name': common.parseDOM(xml, 'transmission', ret = 'name'),
                 'url' : common.parseDOM(xml, 'transmission', ret = 'url'),
             }
-            
+
             url = transmission['url'][0]
-            for l in range(0, len(transmission['name'])):
-                if(transmission['name'][l] == ontvkg_lang):
-                    url = transmission['url'][l]
-            
+
+            for i in range(0, len(transmission['name'])):
+                if(transmission['name'][i] == ontvkg_lang):
+                    url = transmission['url'][i]
+
             return url
-    except: pass
+    except:
+        xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return ''
