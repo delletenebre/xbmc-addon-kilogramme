@@ -336,9 +336,15 @@ def get_videos_by_season(url, title, season):
                 label = common.replaceHTMLCodes(title.decode('utf-8') + ' &emsp; ' + s_num_e_num )
 
                 if 'fullname' in item:
-                    label = label + common.replaceHTMLCodes('&emsp;' + item['fullname'].decode('utf-8'))
+                    lbl = item['fullname']
+                    if isinstance(lbl, unicode):
+                        lbl = lbl.encode('utf8')
+                    label = label + common.replaceHTMLCodes('&emsp;' + lbl.decode('utf-8'))
                 elif 'name' in item and item['name']:
-                    label = label + common.replaceHTMLCodes('&emsp;' + item['name'].decode('utf-8'))
+                    lbl = item['name']
+                    if isinstance(lbl, unicode):
+                        lbl = lbl.encode('utf8') 
+                    label = label + common.replaceHTMLCodes('&emsp;' + lbl.decode('utf-8'))
                 
                 icon = ''
                 ep_json = getEpisode(item['id'])
