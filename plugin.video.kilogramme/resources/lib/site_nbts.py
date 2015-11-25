@@ -8,6 +8,9 @@ BASE_API    = 'http://namba.kg/api'
 BASE_NAME   = 'Namba.Сериалы'
 BASE_LABEL  = 'nbts'
 
+NAMBA_LOGIN = plugin.get_setting('nbts_login', str).strip()
+NAMBA_PASSWORD = plugin.get_setting('nbts_password', str).strip()
+
 @plugin.route('/site/' + BASE_LABEL)
 def nbts_index():
     item_list = get_categories()
@@ -24,6 +27,9 @@ def nbts_index():
             'label': set_color('[ Поиск ]', 'dialog', True),
             'path' : plugin.url_for('nbts_search'),
             'icon' : get_local_icon('find')
+        },{
+            'label': set_color('[ Избранное ]', 'bright', True),
+            'path' : plugin.url_for('nbts_favorites')
         },{
             'label': set_color('Последние поступления', 'bright', True),
             'path' : plugin.url_for('nbts_top30', type = 'new')
@@ -50,6 +56,17 @@ def nbts_top30(type):
     return items
 
 
+@plugin.route('/site/' + BASE_LABEL + '/favorites')
+def nbts_favorites():
+    if not NAMBA_LOGIN or not NAMBA_PASSWORD:
+        plugin.notify('Не указаны логин или пароль', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+        plugin.log.error("%s: favorites Не указаны логин или пароль", BASE_NAME)
+        return
+    items = get_favorites()
+
+    return items
+
+
 @plugin.route('/site/' + BASE_LABEL + '/category/<id>')
 def nbts_serials_by_category(id):
     item_list = get_serials_by_category(id)
@@ -66,7 +83,7 @@ def nbts_serials_by_category(id):
 @plugin.route('/site/' + BASE_LABEL + '/serial/<serial_id>')
 def nbts_seasons(serial_id):
     item_list = get_seasons(serial_id, 0)
-    xbmc.log(str(item_list))
+    plugin.log.info(str(item_list))
 
     items = [{
         'label'     : item['title'],
@@ -107,8 +124,6 @@ def nbts_search():
         plugin.redirect('plugin://'+plugin.id+'/site/' + BASE_LABEL)
 
 
-
-
 #method
 def get_search_results(search_query):
     items = []
@@ -132,6 +147,7 @@ def get_search_results(search_query):
     except: pass
     return items
 
+
 #method
 def get_top30(type = 'new'):
     #type = popular || new
@@ -150,6 +166,67 @@ def get_top30(type = 'new'):
                 items.append({'title':name, 'icon':icon, 'id':id})
     except: pass
     return items
+
+
+#method
+def get_favorites():
+    items = []
+    try:
+        result = common.fetchPage({'link': 'http://namba.kg'})
+        if result['status'] != 200:
+            plugin.notify('Сервер недоступен', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+            plugin.log.error("%s: favorites server error: %s" % (BASE_NAME, result.get('status')))
+            return
+        # Find token
+        namba_token = re.compile('<script>var CSRF_TOKEN=\'(.+?)\';</script>').findall(result['content'])[0]
+        r = common.fetchPage({'link': BASE_API + '/',
+                              'post_data': {'token': namba_token,
+                                            'remember': 'on',
+                                            'service': 'user',
+                                            'action': 'login',
+                                            'password': NAMBA_PASSWORD,
+                                            'login': NAMBA_LOGIN}
+                              })
+        if r['status'] != 200:
+            plugin.notify('Ошибка авторизации', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+            plugin.log.error("%s: favorites Ошибка авторизации: %s" % (BASE_NAME, r.get('content')))
+            return
+        if "LOGIN_FAILED_INVALID_CREDENTIALS" in r['content']:
+            plugin.notify('Неверный логин или пароль', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+            plugin.log.error("%s: favorites Неверный логин или пароль" % BASE_NAME)
+            return
+        # Get cookie
+        cookie = ''
+        for h in r['header']:
+            if h.find('Set-Cookie') > -1:
+                cookie = h.replace('Set-Cookie: ', '').split(';')[0]
+        if not cookie:
+            plugin.notify('Ошибка авторизации Cookie', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+            plugin.log.error("%s: favorites Ошибка авторизации Cookie" % BASE_NAME)
+            return
+        # Get favorites list
+        result = common.fetchPage({'link': BASE_URL + '/favorite.php?user=%s' % NAMBA_LOGIN, 'cookie': cookie})
+        if result['status'] == 200:
+            html = result['content']
+            serials = common.parseDOM(html, 'ul', attrs={'class': 'serials-list'})
+            serials_li = common.parseDOM(serials, 'li')
+            for item in serials_li:
+                title = common.parseDOM(item, 'img', ret='title')[0]
+                icon = common.parseDOM(item, 'img', ret='src')[0]
+                href = common.parseDOM(item, 'a', ret='href')[0]
+                param = common.getParameters(href)
+                items.append({'label': common.replaceHTMLCodes(title),
+                              'thumbnail': icon,
+                              'path': plugin.url_for('nbts_seasons', serial_id=param['id']),
+                              })
+            return items
+        else:
+            plugin.notify('Избранное недоступно', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+            plugin.log.error("%s: favorites Избранное недоступно" % BASE_NAME)
+    except Exception as e_info:
+        plugin.notify('Ошибка плагина', BASE_NAME, image=get_local_icon('noty_' + BASE_LABEL))
+        plugin.log.error("get_favorites error: %s", e_info)
+    return
 
 
 #method

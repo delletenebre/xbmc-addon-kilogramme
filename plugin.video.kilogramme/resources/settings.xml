@@ -15,5 +15,8 @@
 		<setting id="ontvkg_pass" type="text"      label="Пароль"                        default=""    option="hidden" />
 		<setting id="ontvkg_lang" type="labelenum" label="Язык трансляции"               default="rus" values = "rus|eng" />
 		<setting id="ontvkg_ppin" type="text"      label="Пароль родительского контроля" default=""    option="hidden" />
+        <setting label="Namba.kg" type="lsep"/>
+		<setting id="nbts_login"    type="text"    label="Логин"                         default=""  />
+		<setting id="nbts_password" type="text"    label="Пароль"                        default=""    option="hidden" />
 	</category>
 </settings>
