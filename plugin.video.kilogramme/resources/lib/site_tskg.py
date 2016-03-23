@@ -89,7 +89,7 @@ def ts_lastadded():
 
 @plugin.route('/site/' + BASE_LABEL + '/<category_id>')
 def ts_tvshows(category_id):
-    item_list = get_tvshows(BASE_URL + 'show?category=' + category_id + '&genre=0&star=0&sort=a')
+    item_list = get_tvshows(BASE_URL + 'show?category=' + category_id + '&sortby=a')
 
     items = [{
                  'label': item['title'],
@@ -105,11 +105,11 @@ def ts_tvshows(category_id):
 @plugin.route('/site/' + BASE_LABEL + '/<category_id>/<name>')
 def ts_seasons(category_id, name):
     title = plugin.request.args['title'][0]
-    item_list = get_seasons(BASE_URL + 'show/' + name, title)
+    item_list = get_seasons(BASE_URL + 'show/' + name)
     items = [{
-                 'label': item['title'],
+                 'label': item['label'],
                  'path': plugin.url_for('ts_season', category_id=category_id, name=name, season=item['season'],
-                                        title=title),
+                                        title=item['title']),
                  'icon': BASE_URL + 'posters/' + name + '.jpg',
                  'is_not_folder': True,
              } for item in item_list]
@@ -148,47 +148,50 @@ def get_lastadded(url):
                         title = common.parseDOM(item, 'a')
                         href = common.parseDOM(item, 'a', ret='href')
 
-                        badge = common.parseDOM(item, 'span', attrs={'class': 'label label-success'})
-                        if badge:
-                            badge = '&emsp;[B][COLOR green]' + badge[0].decode('unicode-escape') + '[/COLOR][/B]'
-                        else:
-                            badge = ''
+                        if ( len(href) > 0 ):
+                            badge = common.parseDOM(item, 'span', attrs={'class': 'label label-success'})
+                            if badge:
+                                badge = '&emsp;[B][COLOR green]' + badge[0].decode('unicode-escape') + '[/COLOR][/B]'
+                            else:
+                                badge = ''
 
-                        route = get_url_route(href[0])
+                            route = get_url_route(href[0])
 
-                        try:
-                            if ( href[0].split('.')[0].find('news') > -1 ):
-                                continue;
-                        except:
-                            xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
-
-                        play_url = ''
-                        info = {}
-                        is_playable = len(route[-1].split('-')) > 2
-
-                        if is_playable:
                             try:
-                                episode_html = common.fetchPage({'link': BASE_URL[:-1] + href[0]})
+                                if ( href[0].split('.')[0].find('news') > -1 ):
+                                    continue;
                             except:
-                                episode_html = common.fetchPage({'link': href[0]})
-                            if episode_html['status'] == 200:
-                                ep_html = episode_html['content']
-                                ep_id = common.parseDOM(ep_html, 'input', attrs={'id': 'episode_id_input'}, ret='value')
-                                ep_json = getEpisode(ep_id[0])
+                                xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
 
-                                temp = ep_json['file']['url']# if ep_json['file']['is_hls'] else ep_json['file']['mp4']
-                                play_url = temp + UserAgent
-                                info = {
-                                    'duration': ep_json['duration'] / 60  # seconds to minutes
-                                }
+                            play_url = ''
+                            info = {}
+                            is_playable = False# len(route[-1].split('-')) > 2
+                            # if is_playable:
+                            #     try:
+                            #         episode_html = common.fetchPage({'link': BASE_URL[:-1] + href[0]})
+                            #     except:
+                            #         episode_html = common.fetchPage({'link': href[0]})
 
-                        label = common.replaceHTMLCodes(
-                            day_title[i][0:5] + '&emsp;' + title[0].decode('unicode-escape') + badge)
-                        label2 = common.replaceHTMLCodes(title[0].decode('unicode-escape'))
+                            #     if episode_html['status'] == 200:
+                            #         ep_html = episode_html['content']
+                            #         ep_id = common.parseDOM(ep_html, 'input', attrs={'id': 'episode_id_input'}, ret='value')
+                            #         ep_json = getEpisode(ep_id[0])
 
-                        items.append({'title': label, 'icon': '', 'is_playable': is_playable,
-                                      'url': play_url if (is_playable) else href[0], 'name': route[0],
-                                      'category_id': '0', 'label': label2, 'info': info})
+                            #         HD = ep_json['video']['files']['HD']['url']
+                            #         SD = ep_json['video']['files']['SD']['url']
+
+                            #         play_url = (HD if HD else SD) + UserAgent
+                            #         info = {
+                            #             'duration': ep_json['duration'] / 60  # seconds to minutes
+                            #         }
+
+                            label = common.replaceHTMLCodes(
+                                day_title[i][0:5] + '&emsp;' + title[0].decode('unicode-escape') + badge)
+                            label2 = common.replaceHTMLCodes(title[0].decode('unicode-escape'))
+
+                            items.append({'title': label, 'icon': '', 'is_playable': is_playable,
+                                          'url': play_url if (is_playable) else href[0], 'name': route[0],
+                                          'category_id': '0', 'label': label2, 'info': info})
 
                     except:
                         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
@@ -221,10 +224,10 @@ def get_categories(url):
             for i in range(0, len(options)):
                 if (options_id[i] != '0'):
                     title = options[i]
-                    href = 'show/?category=' + options_id[i] + '&amp;sort=a'
+                    href = 'show/?category=' + options_id[i] + '&amp;sortby=a'
                     icon = ''
                     category = ''
-
+                    xbmc.log(str(options_id[i]))
                     items.append({'title': title, 'category': options_id[i], 'icon': icon, 'fanart': branding})
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
@@ -250,6 +253,7 @@ def get_tvshows(url):
 
                 container = common.parseDOM(html, 'div', attrs={'id': 'shows'})
                 shows = common.parseDOM(container, 'div', attrs={'class': 'show'})
+
                 for item in shows:
                     title = common.parseDOM(item, 'p', attrs={'class': 'show-title'})
                     href = common.parseDOM(item, 'a', ret='href')
@@ -267,10 +271,10 @@ def get_tvshows(url):
                         'properties': properties
                     })
 
-                pagination = common.parseDOM(html, 'ul', attrs={'class': 'pagination hidden'})
-                li = common.parseDOM(pagination, 'li', attrs={'class': 'next'})
+                # pagination = common.parseDOM(html, 'ul', attrs={'class': 'pagination hidden'})
+                # li = common.parseDOM(pagination, 'li', attrs={'class': 'next'})
 
-                if (li):
+                if (len(shows) > 0):
                     get_shows_by_pagination(page + 1)
         except:
             xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
@@ -281,7 +285,7 @@ def get_tvshows(url):
 
 
 #method
-def get_seasons(url, title):
+def get_seasons(url):
     items = []
     url_prefix = ''
     try:
@@ -291,14 +295,17 @@ def get_seasons(url, title):
         if result['status'] == 200:
             html = result['content']
 
+            title = common.parseDOM(html, 'h1', {'id': 'h-show-title'})[0].encode('utf-8')
+
             sections = common.parseDOM(html, 'section')
             for item in sections:
                 season_number = common.parseDOM(item, 'h3')
 
                 label = common.replaceHTMLCodes(title.decode('utf-8') + ' &emsp; ' + season_number[0])
-                items.append({'title': label, 'url': url, 'icon': '', 'season': season_number[0][6:]})
+                items.append({'title': title, 'label': label, 'url': url, 'icon': '', 'season': season_number[0][6:]})
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
+
     return items
 
 
@@ -306,7 +313,7 @@ def get_seasons(url, title):
 def get_videos_by_season(url, title, season):
     items = []
     season = int(season)
-    
+
     try:
         result = common.fetchPage({'link': url+'-'+str(season)+'-1',
                                    'headers': [
@@ -343,14 +350,19 @@ def get_videos_by_season(url, title, season):
                 elif 'name' in item and item['name']:
                     lbl = item['name']
                     if isinstance(lbl, unicode):
-                        lbl = lbl.encode('utf8') 
+                        lbl = lbl.encode('utf8')
                     label = label + common.replaceHTMLCodes('&emsp;' + lbl.decode('utf-8'))
-                
+
                 icon = ''
-                ep_json = getEpisode(item['id'])
-                temp = ep_json['file']['url']# if ep_json['file']['is_hls'] else ep_json['file']['mp4']
-                href = temp
-                items.append({'title': label, 'url': href, 'icon': icon})
+
+                episode = getEpisode(item['id'])
+
+                duration = episode['duration']
+
+                HD = episode['video']['files']['HD']['url']
+                SD = episode['video']['files']['SD']['url']
+
+                items.append({'title': label, 'url': HD if HD else SD, 'icon': icon})
 
     except:
         xbmc.log(traceback.format_exc(), xbmc.LOGERROR)
