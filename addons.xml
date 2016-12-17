@@ -45,6 +45,46 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
   </extension>
 </addon>
 
+<addon id="plugin.video.kg"
+       name="KG Фильмы и Сериалы"
+       version="2.0.0"
+       provider-name="delletenebre@gmail.com">
+    <requires>
+        <import addon="xbmc.python" version="2.1.0" />
+        <import addon="script.module.simplejson" version="3.4.0" />
+        <import addon="script.module.httplib2" version="0.8.0" />
+        <import addon="script.module.beautifulsoup4" version="4.3.1" />
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="addon.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="ru">Просмотр видео с лучших сайтов в зоне *.kg</summary>
+        <description lang="ru">
+Просмотр видео с лучших сайтов Кыргызстана:
+    * ONAIR.kg (http://www.onair.kg/)
+    * TS.KG (http://ts.kg/)
+    * Cinema Online (http://cinemaonline.kg/)
+    * Namba.Кинозал (http://movie.namba.kg/)
+    * Namba.Сериалы (http://serials.namba.kg/)
+        </description>
+        <disclaimer lang="ru"></disclaimer>
+        <language></language>
+        <platform>all</platform>
+        <license>GNU GENERAL PUBLIC LICENSE. Version 3, June 2007</license>
+        <forum>http://diesel.elcat.kg/index.php?showtopic=43533785</forum>
+        <website></website>
+        <email>delletenebre@gmail.com</email>
+        <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
+        <news></news>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart></fanart>
+            <screenshot></screenshot>
+        </assets>
+    </extension>
+</addon>
+
 <addon id="repository.kgontv" name="KGOnTV XBMC Add-ons" version="1.0.0" provider-name="delletenebre">
   <extension point="xbmc.addon.repository" name="KGOnTV XBMC Add-ons">
     <info compressed="false">http://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
