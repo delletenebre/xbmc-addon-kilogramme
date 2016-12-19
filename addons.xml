@@ -45,9 +45,9 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
   </extension>
 </addon>
 
-<addon id="plugin.video.kg"
+<addon id="plugin.video.kilogramme2"
        name="KG Фильмы и Сериалы"
-       version="2.0.0"
+       version="2.0.1"
        provider-name="delletenebre@gmail.com">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
