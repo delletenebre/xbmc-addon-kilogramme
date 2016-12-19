@@ -5,10 +5,7 @@ from App import P
 from App import H
 import traceback
 import urllib
-try:
-    import simplejson as json
-except:
-    import json
+import simplejson as json
 import math
 import xbmc
 

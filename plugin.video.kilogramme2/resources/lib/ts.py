@@ -4,10 +4,7 @@ import App
 from App import P
 from App import H
 import xbmc
-try:
-    import simplejson as json
-except:
-    import json
+import simplejson as json
 import urllib
 import traceback
 from operator import itemgetter

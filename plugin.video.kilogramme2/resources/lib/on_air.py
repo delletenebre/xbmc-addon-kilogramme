@@ -2,10 +2,7 @@
 import App
 from App import P
 import traceback
-try:
-    import simplejson as json
-except:
-    import json
+import simplejson as json
 import urllib
 import xbmc
 
