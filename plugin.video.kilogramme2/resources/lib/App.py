@@ -21,6 +21,45 @@ ADDON_FOLDER = xbmc.translatePath('special://profile/addon_data/' + PLUGIN_ID)
 STR_NO_DATA = 'n/d'
 STR_LIST_DELIMITER = '[/B] / [B]'
 
+VIEW_MODES = {
+    'skin.estuary': {
+        'files': {
+            'type': 'files',
+            'mode': 55,
+        },
+        'movies': {
+            'type': 'files',
+            'mode': 55,
+        },
+        'tvshows': {
+            'type': 'tvshows',
+            'mode': 55
+        },
+        'episodes': {
+            'type': 'episodes',
+            'mode': 50,
+        }
+    },
+    'skin.confluence': {
+        'files': {
+            'type': 'files',
+            'mode': 50
+        },
+        'movies': {
+            'type': 'movies',
+            'mode': 504
+        },
+        'tvshows': {
+            'type': 'tvshows',
+            'mode': 504
+        },
+        'episodes': {
+            'type': 'episodes',
+            'mode': 50
+        }
+    },
+}
+
 
 H = httplib2.Http(ADDON_FOLDER + '/.cache')
 
@@ -46,8 +85,17 @@ def http_request(url, method='GET', data={}):
     return None
 
 
-def create_listing(items):
-    return P.create_listing(items, succeeded=(len(items) > 0))
+def get_skin():
+    return xbmc.getSkinDir()
+
+
+def clear_xbmc_tags(string):
+    return string.replace('[B]', '').replace('[/B]', '')
+
+
+def create_listing(items, content='files', update_listing=False):
+    view = VIEW_MODES[get_skin()][content]
+    return P.create_listing(items, succeeded=(len(items) > 0), content=view['type'], view_mode=view['mode'], update_listing=update_listing)
 
 
 def keyboard(default=None, heading=None, hidden=False, numeric=False):
@@ -125,7 +173,7 @@ def format_bold(text):
     return '[B]%s[/B]' % (text) if text != STR_NO_DATA else text
 
 
-def format_description(country='', genre='', description='', director=''):
+def format_description(country='', genre='', description='', director='', episodes='', rating=''):
     if len(country) == 2:
         country = get_country(country)
     if country and country != STR_NO_DATA:
@@ -136,6 +184,9 @@ def format_description(country='', genre='', description='', director=''):
         director = format_bold(director)
 
     result = ''
+    if episodes:
+        result += 'Эпизодов: {0}\n'.format(episodes)
+
     if country:
         result += 'Страна: {0}\n'.format(country)
 
@@ -145,12 +196,15 @@ def format_description(country='', genre='', description='', director=''):
     if director:
         result += 'Режиссёр: {0}\n'.format(director)
 
+    if rating:
+        result += 'Рейтинг: [B]{0}[/B]\n'.format(rating)
+
     if description:
         if result:
             result += '\n'
         result += '{0}\n'.format(description)
 
-    return result
+    return replace_html_codes(result.decode('utf-8'))
 
 
 def make_root(url, path):
@@ -196,6 +250,7 @@ def create_playlist(items=[{}], type='video'):
 
 def explode_info_string(string):
     return STR_LIST_DELIMITER.join(string).encode('utf-8')
+
 
 def get_country(code):
     countries = {

@@ -8,6 +8,8 @@ import urllib
 import simplejson as json
 import math
 import xbmc
+import xbmcplugin
+import sys
 
 
 URL = 'http://cinemaonline.kg'
@@ -75,7 +77,7 @@ def co_search(params):
     else:
         App.noty('no_search_results')
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='movies')
 
 
 @P.action()
@@ -92,6 +94,7 @@ def co_bestsellers(params):
                 items.append({
                     'label': App.replace_html_codes('[B]%s[/B]&emsp;%s' % (movie['name'], category['name'])),
                     'thumb': cover,
+                    'fanart': cover,
                     'art': {
                         'poster': cover
                     },
@@ -103,7 +106,7 @@ def co_bestsellers(params):
                     'url': P.get_url(action='co_movie', id=movie['movie_id'])
                 })
 
-    return P.create_listing(items, succeeded=(len(items) > 0))
+    return App.create_listing(items, content='movies')
 
 
 @P.action()
@@ -145,26 +148,24 @@ def co_movies(params):
             description = get_description(movie)
             id = movie['movie_id']
 
-            stars = get_movie_rating(movie)
-
             cover = get_bigger_cover(movie['cover'])
 
-            label = App.replace_html_codes(
-                '[B]%s[/B]&emsp;%s&emsp;[B]%s[/B]' % (movie['name'], movie['quality'], stars.decode('utf-8'))
-            )
+            label = App.format_bold(movie['name'])
             plot = description
 
             items.append(
                 {
                     'label': label,
                     'thumb': cover,
+                    'fanart': cover,
                     'art': {
-                        'poster': cover
+                        'poster': cover,
                     },
                     'info': {
                         'video': {
                             'plot': plot,
                             'year': movie['year'],
+                            'genre': ' / '.join(movie['genres'][:2]) if 'genres' in movie else ''
                         }
                     },
                     'url': P.get_url(action='co_movie', id=id)
@@ -184,7 +185,7 @@ def co_movies(params):
                 'url': P.get_url(action='co_movies', order_id=params.order_id, genre_id=params.genre_id, page='search', last_page=total_pages)
             })
 
-    return P.create_listing(items, succeeded=(len(items) > 0), update_listing=params.refresh)
+    return App.create_listing(items, content='movies', update_listing=params.refresh)
 
 
 @P.action()
@@ -262,7 +263,7 @@ def co_movie(params):
             if file['is_dir']:
                 break
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='movies')
 
 
 @P.action()
@@ -362,11 +363,17 @@ def get_description(info):
         director = App.explode_info_string(info['directors'])
 
     # name_original = info['international_name']
+
+    rating = get_movie_rating_value(info, 'rating_imdb_count', 'rating_imdb_value')
+    if rating == '':
+        rating = get_movie_rating_value(info, 'rating_kinopoisk_count', 'rating_kinopoisk_value')
+
     return App.format_description(
-        App.explode_info_string(info['countries']) if 'countries' in info else '',
-        App.explode_info_string(info['genres']) if 'genres' in info else '',
-        description.replace('<br>', '\n').encode('utf-8'),
-        director
+        country=App.explode_info_string(info['countries']) if 'countries' in info else '',
+        genre='' if App.get_skin() == 'skin.confluence' else App.explode_info_string(info['genres']) if 'genres' in info else '',
+        description=description.replace('<br>', '\n').encode('utf-8'),
+        director=director,
+        rating=rating
     )
 
 
@@ -391,6 +398,16 @@ def check_movie_rating(movie, count_name, value_name):
     except:
         pass
     return stars
+
+
+def get_movie_rating_value(movie, count_name, value_name):
+    try:
+        count = int(movie[count_name])
+        rating = float(movie[value_name])
+        if count >= stars_condition['count']:
+            return str(rating)
+    except:
+        return ''
 
 
 def get_pagination(current, total, size, offset, params):

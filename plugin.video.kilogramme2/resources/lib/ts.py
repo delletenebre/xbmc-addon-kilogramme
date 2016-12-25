@@ -83,7 +83,7 @@ def ts_search(params):
     else:
         App.noty('no_search_results')
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='tvshows')
 
 
 @P.action()
@@ -100,6 +100,10 @@ def ts_last_added(params):
                 badge = get_news_item_badge(list_item)
 
                 link = list_item.find(class_='app-news-link')
+
+                if not link:
+                    continue
+
                 label = App.bs_get_text(link)
                 sub_label = App.bs_get_text(list_item.find('small'))
 
@@ -130,13 +134,14 @@ def ts_last_added(params):
                         'label': label,
                         'info': {
                             'video': {
-                                'plot': description
+                                'plot': '' if App.get_skin() == 'skin.confluence' else description,
+                                'genre': App.clear_xbmc_tags(genres)
                             }
                         },
                         'url': item_url,
                     }
                 )
-    return App.create_listing(items)
+    return App.create_listing(items, content='tvshows')
 
 
 @P.action()
@@ -170,19 +175,17 @@ def ts_category(params):
                     if country is not None:
                         country = App.get_country(country.get('title'))
                     else:
-                        country = App.STR_NO_DATA
+                        country = ''
 
                     label = tag_p.get_text()
-
-                    description = 'Эпизодов: {0}\nСтрана: {1}\nЖанр: {2}\n'.format(
-                        App.format_bold(episodes),
-                        App.format_bold(country),
-                        App.format_bold(genres))
-
+                    description = App.format_description(episodes=episodes,
+                                                         country=country,
+                                                         genre='' if App.get_skin() == 'skin.confluence' else genres)
                     items.append(
                         {
                             'label': label,
-                            'thumb': poster,
+                            'icon': poster,
+                            'fanart': poster,
                             'art': {
                                 'poster': poster
                             },
@@ -190,6 +193,8 @@ def ts_category(params):
                                 'video': {
                                     'mediatype': 'tvshow',
                                     'title': label,
+                                    'genre': App.clear_xbmc_tags(genres),
+                                    'episode': episodes,
                                     'plot': description
                                 }
                             },
@@ -204,7 +209,7 @@ def ts_category(params):
 
     get_shows_by_page(1)
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='tvshows')
 
 
 @P.action()
@@ -232,7 +237,18 @@ def ts_tvshow_seasons(params):
                 if href[1] == 'genre':
                     genres.append(a.get_text())
         genres = App.explode_info_string(genres)
-        description = App.format_description(country, genres, description)
+        description = App.format_description(description=description,
+                                             country=country,
+                                             genre='' if App.get_skin() == 'skin.confluence' else genres)
+        meta_premiered = ''
+        year = html.find('h3')
+        if year:
+            year = App.bs_get_text(year.find('a'))
+            if year:
+                meta_premiered = '%s-01-01' % year
+        else:
+            year = ''
+        meta_genres = App.clear_xbmc_tags(genres)
 
         season_counter = 0
         episodes_counter = 0
@@ -247,21 +263,27 @@ def ts_tvshow_seasons(params):
             episodes_ids = []
             episodes = season.find_all('a')
             episodes_counter += len(episodes)
+            meta_episodes_count = len(episodes)
             for a in episodes:
                 episodes_ids.append(a.get('data-id'))
+
             episodes_ids = ','.join(episodes_ids)
             all_episodes_ids += episodes_ids
 
             items.append(
                 {
                     'label': label,
-                    'thumb': poster,
+                    'icon': poster,
+                    'fanart': poster,
                     'art': {
                         'poster': poster
                     },
                     'info': {
                         'video': {
                             'plot': description,
+                            'year': year,
+                            'genre': meta_genres,
+                            'episode': meta_episodes_count
                         }
                     },
                     'url': P.get_url(action='ts_tvshow_season_episodes',
@@ -271,24 +293,6 @@ def ts_tvshow_seasons(params):
                 }
             )
 
-        # items.insert(0, {
-        #     'label': title,
-        #     'thumb': poster,
-        #     'art': {
-        #         'poster': poster
-        #     },
-        #     'info': {
-        #         'video': {
-        #             'plot': description,
-        #         }
-        #     },
-        #     'properties': {
-        #         'TotalSeasons': str(season_counter),
-        #         'TotalEpisodes': str(episodes_counter)
-        #     },
-        #     'url': P.get_url(action='add_favorite'),
-        #     'is_folder': False,
-        # })
         items.insert(0, {
             'label': App.replace_html_codes('[B]%s[/B]&emsp;Все сезоны'.decode('utf-8') % title),
             'thumb': poster,
@@ -299,6 +303,9 @@ def ts_tvshow_seasons(params):
                 'video': {
                     'mediatype': 'tvshow',
                     'plot': description,
+                    'premiered': meta_premiered,
+                    'genre': meta_genres,
+                    'episode': episodes_counter
                 }
             },
             'properties': {
@@ -311,7 +318,7 @@ def ts_tvshow_seasons(params):
             'is_folder': False
         })
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='tvshows')
 
 
 @P.action()
@@ -329,7 +336,6 @@ def ts_tvshow_season_episodes(params):
                     label += App.replace_html_codes('&emsp;' + App.format_bold(episode['name']))
 
                 duration = episode['duration']
-                # link = episode['link'].rsplit('/')
 
                 hd = episode['video']['files']['HD']['url']
                 sd = episode['video']['files']['SD']['url']
@@ -399,7 +405,7 @@ def ts_selection(params):
                 }
             )
 
-    return App.create_listing(items)
+    return App.create_listing(items, content='tvshows')
 
 
 @P.action()

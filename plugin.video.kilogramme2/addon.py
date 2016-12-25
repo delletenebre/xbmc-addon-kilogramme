@@ -4,6 +4,7 @@ from resources.lib.App import P
 import resources.lib.ts
 import resources.lib.on_air
 import resources.lib.cinema_online
+import resources.lib.webcameras
 
 
 @P.action()
@@ -31,6 +32,11 @@ def root(params):
         {
             'label': 'Namba.Кинозал',
             'url': P.get_url(action='subfolder')
+        },
+        {
+            'label': 'Веб-камеры',
+            'icon': App.get_media('webcamera'),
+            'url': P.get_url(action='wc_index')
         }
     ]
 
