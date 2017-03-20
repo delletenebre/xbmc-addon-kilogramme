@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from bs4 import BeautifulSoup
 import App
 from App import P
 from App import H
@@ -8,8 +7,6 @@ import urllib
 import simplejson as json
 import math
 import xbmc
-import xbmcplugin
-import sys
 
 
 URL = 'http://cinemaonline.kg'
@@ -81,6 +78,7 @@ def co_search(params):
 
 
 @P.action()
+@P.cached(360)
 def co_bestsellers(params):
     items = []
 
@@ -110,6 +108,7 @@ def co_bestsellers(params):
 
 
 @P.action()
+@P.cached(360)
 def co_movies(params):
     if 'genre_id' not in params:
         params.genre_id = ''
@@ -145,13 +144,12 @@ def co_movies(params):
         data = json.loads(content)['json'][0]['response']
 
         for movie in data['movies']:
-            description = get_description(movie)
+            plot = get_description(movie)
             id = movie['movie_id']
 
             cover = get_bigger_cover(movie['cover'])
 
             label = App.format_bold(movie['name'])
-            plot = description
 
             items.append(
                 {
@@ -189,6 +187,7 @@ def co_movies(params):
 
 
 @P.action()
+@P.cached(1440)
 def co_genres(params):
     items = []
 

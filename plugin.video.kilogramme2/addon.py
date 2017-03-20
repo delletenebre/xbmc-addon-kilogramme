@@ -4,6 +4,7 @@ from resources.lib.App import P
 import resources.lib.ts
 import resources.lib.on_air
 import resources.lib.cinema_online
+import resources.lib.namba_movies
 import resources.lib.webcameras
 
 
@@ -27,11 +28,13 @@ def root(params):
         },
         {
             'label': 'Namba.Сериалы',
+            'icon': App.get_media('namba_tvshows'),
             'url': P.get_url(action='subfolder')
         },
         {
             'label': 'Namba.Кинозал',
-            'url': P.get_url(action='subfolder')
+            'icon': App.get_media('namba_movies'),
+            'url': P.get_url(action='nm_index')
         },
         {
             'label': 'Веб-камеры',

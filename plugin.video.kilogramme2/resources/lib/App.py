@@ -252,6 +252,11 @@ def explode_info_string(string):
     return STR_LIST_DELIMITER.join(string).encode('utf-8')
 
 
+def timestring2seconds(timestring):
+    ftr = [3600, 60, 1]
+    return sum([a * b for a, b in zip(ftr, map(int, timestring.split(':')))])
+
+
 def get_country(code):
     countries = {
         'AU': 'Австралия',

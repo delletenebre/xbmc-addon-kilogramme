@@ -14,6 +14,7 @@ URL = 'http://www.ts.kg'
 
 
 @P.action()
+@P.cached(1440)
 def ts_index(params):
     items = []
     content = App.http_request(URL + '/show')
@@ -50,32 +51,26 @@ def ts_index(params):
     return App.create_listing(items)
 
 
-@P.cached(60 * 24)
-def get_all_shows_json():
-    content = App.http_request(URL + '/show/search/data.json')
-    if content:
-        return sorted(json.loads(content), key=itemgetter('title'))
-
-
 @P.action()
 def ts_search(params):
     items = []
     query = App.keyboard(heading='Поиск')
     if query is not None and query != '':
         query = query.decode('utf-8').lower()
-        tvshows = get_all_shows_json()
+        tvshows = App.http_request('%s/show/search/%s' % (URL, query))
         if tvshows is not None:
+            tvshows = sorted(json.loads(tvshows), key=itemgetter('name'))
             for tvshow in tvshows:
                 try:
-                    title = tvshow['title'].encode('utf-8')
+                    name = tvshow['name'].encode('utf-8')
                     url = tvshow['url']
-                    if query in title.decode('utf-8').lower():
-                        items.append(
-                            {
-                                'label': title,
-                                'url': P.get_url(action='ts_tvshow_seasons', href=url)
-                            }
-                        )
+
+                    items.append(
+                        {
+                            'label': name,
+                            'url': P.get_url(action='ts_tvshow_seasons', href=url)
+                        }
+                    )
                 except:
                     P.log_error(traceback.format_exc())
         if len(items) == 0:
@@ -87,6 +82,7 @@ def ts_search(params):
 
 
 @P.action()
+@P.cached(120)
 def ts_last_added(params):
     items = []
 
@@ -145,6 +141,7 @@ def ts_last_added(params):
 
 
 @P.action()
+@P.cached(1440)
 def ts_category(params):
     items = []
 
@@ -213,6 +210,7 @@ def ts_category(params):
 
 
 @P.action()
+@P.cached(1440)
 def ts_tvshow_seasons(params):
     items = []
     content = App.http_request(URL + params.href)

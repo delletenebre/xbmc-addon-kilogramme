@@ -95,6 +95,7 @@ def oa_search(params):
 
 
 @P.action()
+@P.cached(360)
 def oa_popular(params):
     items = []
 
@@ -142,6 +143,7 @@ def oa_popular(params):
 
 
 @P.action()
+@P.cached(360)
 def oa_items(params):
     items = []
 
@@ -201,6 +203,7 @@ def oa_items(params):
 
 
 @P.action()
+@P.cached(360)
 def oa_seasons(params):
     items = []
 
