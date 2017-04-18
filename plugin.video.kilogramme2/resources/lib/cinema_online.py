@@ -49,7 +49,9 @@ def co_index(params):
 def co_search(params):
     items = []
     query = App.keyboard(heading='Поиск')
-    if query is not None and query != '':
+    if query is None:
+        pass
+    elif query != '':
         content = App.http_request(URL + '/suggestion.php?' + urllib.urlencode({'q': query}))
         if content:
             movies = json.loads(content)['json'][0]['response']['movies']
@@ -369,7 +371,7 @@ def get_description(info):
 
     return App.format_description(
         country=App.explode_info_string(info['countries']) if 'countries' in info else '',
-        genre='' if App.get_skin() == 'skin.confluence' else App.explode_info_string(info['genres']) if 'genres' in info else '',
+        genre='' if App.get_skin_name() != 'skin.estuary' else App.explode_info_string(info['genres']) if 'genres' in info else '',
         description=description.replace('<br>', '\n').encode('utf-8'),
         director=director,
         rating=rating

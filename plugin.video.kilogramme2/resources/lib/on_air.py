@@ -46,7 +46,9 @@ def oa_search(params):
     items = []
 
     query = App.keyboard(heading='Поиск')
-    if query is not None and query != '':
+    if query is None:
+        pass
+    elif query != '':
         content = App.http_request(API + '/films/search?' + urllib.urlencode({'title': query}))
         if content:
             data = json.loads(content)

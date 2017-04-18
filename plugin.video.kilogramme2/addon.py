@@ -5,11 +5,13 @@ import resources.lib.ts
 import resources.lib.on_air
 import resources.lib.cinema_online
 import resources.lib.namba_movies
+import resources.lib.namba_serials
 import resources.lib.webcameras
 
 
 @P.action()
 def root(params):
+    P.log_error(str(P.get_setting('string_formatting')))
     return [
         {
             'label': 'TS.KG',
@@ -27,14 +29,14 @@ def root(params):
             'url': P.get_url(action='co_index')
         },
         {
-            'label': 'Namba.Сериалы',
-            'icon': App.get_media('namba_tvshows'),
-            'url': P.get_url(action='subfolder')
-        },
-        {
             'label': 'Namba.Кинозал',
             'icon': App.get_media('namba_movies'),
             'url': P.get_url(action='nm_index')
+        },
+        {
+            'label': 'Namba.Сериалы',
+            'icon': App.get_media('namba_serials'),
+            'url': P.get_url(action='ns_index')
         },
         {
             'label': 'Веб-камеры',

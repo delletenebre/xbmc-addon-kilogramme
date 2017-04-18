@@ -58,10 +58,28 @@ VIEW_MODES = {
             'mode': 50
         }
     },
+    'skin.unknown': {
+        'files': {
+            'type': 'files',
+            'mode': 55,
+        },
+        'movies': {
+            'type': 'files',
+            'mode': 55,
+        },
+        'tvshows': {
+            'type': 'files',
+            'mode': 55
+        },
+        'episodes': {
+            'type': 'files',
+            'mode': 55,
+        }
+    },
 }
 
 
-H = httplib2.Http(ADDON_FOLDER + '/.cache')
+H = httplib2.Http(ADDON_FOLDER + '/.cache', disable_ssl_certificate_validation=True)
 
 
 def http_request(url, method='GET', data={}):
@@ -85,7 +103,7 @@ def http_request(url, method='GET', data={}):
     return None
 
 
-def get_skin():
+def get_skin_name():
     return xbmc.getSkinDir()
 
 
@@ -94,7 +112,10 @@ def clear_xbmc_tags(string):
 
 
 def create_listing(items, content='files', update_listing=False):
-    view = VIEW_MODES[get_skin()][content]
+    skin_name = get_skin_name()
+    if skin_name not in VIEW_MODES:
+        skin_name = 'skin.unknown'
+    view = VIEW_MODES[skin_name][content]
     return P.create_listing(items, succeeded=(len(items) > 0), content=view['type'], view_mode=view['mode'], update_listing=update_listing)
 
 
@@ -166,11 +187,15 @@ def get_color(color):
 
 
 def format_color(text, color):
-    return '[COLOR %s]%s[/COLOR]' % (get_color(color), text)
+    if P.get_setting('string_formatting'):
+        text = '[COLOR %s]%s[/COLOR]' % (get_color(color), text)
+    return text
 
 
 def format_bold(text):
-    return '[B]%s[/B]' % (text) if text != STR_NO_DATA else text
+    if P.get_setting('string_formatting'):
+        text = '[B]%s[/B]' % (text) if text != STR_NO_DATA else text
+    return text
 
 
 def format_description(country='', genre='', description='', director='', episodes='', rating=''):
@@ -197,7 +222,7 @@ def format_description(country='', genre='', description='', director='', episod
         result += 'Режиссёр: {0}\n'.format(director)
 
     if rating:
-        result += 'Рейтинг: [B]{0}[/B]\n'.format(rating)
+        result += 'Рейтинг: {0}\n'.format(format_bold(rating))
 
     if description:
         if result:
@@ -211,11 +236,13 @@ def make_root(url, path):
     return '/%s/%s'.format(url, path)
 
 
-def replace_html_codes(txt):
-    txt = re.sub('(&#[0-9]+)([^;^0-9]+)', '\\1;\\2', to_utf8(txt))
-    txt = HTMLParser.HTMLParser().unescape(txt)
-    txt = txt.replace('&amp;', '&')
-    return txt
+def replace_html_codes(text):
+    if not P.get_setting('string_formatting'):
+        text = text.replace('&emsp;', '   ')
+    text = re.sub('(&#[0-9]+)([^;^0-9]+)', '\\1;\\2', to_utf8(text))
+    text = HTMLParser.HTMLParser().unescape(text)
+    text = text.replace('&amp;', '&')
+    return text
 
 
 def to_utf8(data):

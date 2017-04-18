@@ -19,7 +19,7 @@ def nm_index(params):
         'url': P.get_url(action='nm_search')
     }, {
         'label': 'Популярные',
-        'url': P.get_url(action='nm_top50')
+        'url': P.get_url(action='nm_top')
     }, {
         'label': 'По жанрам',
         'url': P.get_url(action='nm_genres')
@@ -30,7 +30,9 @@ def nm_index(params):
 def nm_search(params):
     items = []
     query = App.keyboard(heading='Поиск')
-    if query is not None and query != '':
+    if query is None:
+        pass
+    elif query != '':
         content = App.http_request(API + '/?%s' % urllib.urlencode({
             'service': 'home',
             'action': 'search',
@@ -61,10 +63,10 @@ def nm_search(params):
 
 @P.action()
 @P.cached(720)
-def nm_top50(params):
+def nm_top(params):
     items = []
 
-    content = App.http_request(URL + '/movie')
+    content = App.http_request(URL + '/movie/')
     if content:
         html = BeautifulSoup(content, 'html.parser')
         block = html.find(class_='charts-block')
@@ -93,7 +95,7 @@ def nm_top50(params):
 def nm_genres(params):
     items = []
 
-    content = App.http_request(URL + '/movie')
+    content = App.http_request(URL + '/movie/')
     if content:
         html = BeautifulSoup(content, 'html.parser')
         block = html.find(class_='categories-menu')
@@ -192,8 +194,6 @@ def create_movie_item(id, cover):
         movie = json.loads(content)['video']
 
         label = movie['title']
-        # if watch == True:
-        #     title = set_color('ПРОСМОТР: ', 'bold').decode('utf-8') + title
 
         item = {
             'label': label,
@@ -208,8 +208,7 @@ def create_movie_item(id, cover):
             },
             'info': {
                 'video': {
-                    'plot': '' if App.get_skin() == 'skin.confluence' else movie['raw_description'],
-                    # 'genre': App.clear_xbmc_tags(genres)
+                    'plot': '' if App.get_skin_name() == 'skin.confluence' else movie['raw_description'],
                 }
             },
             'url': movie['download']['flv'],
@@ -229,7 +228,7 @@ def get_pagination(current_page, total_pages, action, params):
 
     if current_page > 1:
         items.append({
-            'label': App.replace_html_codes('[B]<[/B]&emsp;Предыдущая страница'.decode('utf-8')),
+            'label': App.replace_html_codes('%s&emsp;Предыдущая страница'.decode('utf-8') % App.format_bold('<')),
             'icon': App.get_media('prev'),
             'url': P.get_url(
                 action=action,
@@ -239,7 +238,7 @@ def get_pagination(current_page, total_pages, action, params):
         })
     if current_page < total_pages:
         items.append({
-            'label': App.replace_html_codes('[B]>[/B]&emsp;Следующая страница'.decode('utf-8')),
+            'label': App.replace_html_codes('%s&emsp;Следующая страница'.decode('utf-8') % App.format_bold('>')),
             'icon': App.get_media('next'),
             'url': P.get_url(
                 action=action,

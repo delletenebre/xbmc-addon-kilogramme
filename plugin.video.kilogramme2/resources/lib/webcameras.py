@@ -2,30 +2,58 @@
 from bs4 import BeautifulSoup
 import App
 from App import P
-from App import H
 import re
 
 
-URL = 'http://www.ts.kg'
-
-
 @P.action()
+@P.cached(30)
 def wc_index(params):
     items = []
-    content = App.http_request('http://smotri.kg')
+    URL = 'http://smotri.kg'
+    content = App.http_request(URL)
     if content:
         html = BeautifulSoup(content, 'html.parser')
-        for td in html.find_all('td'):
-            label = App.bs_get_text(td.find('a'))
+        div = html.find(class_='view-content')
+        for camera in div.find_all('a'):
+            try:
+                label = App.bs_get_text(camera)
+                href = camera.get('href')
 
-            for script in td.find_all('script'):
-                cams = re.search('swf\.flashVar\(\"vid\",\"(.+?)\"\);', script.get_text())
-                if cams:
+                content = App.http_request(URL + href)
+                if content:
+                    play_url = re.compile('\"rtmp://(.+?)\"').findall(content)[0]
+                    if play_url:
+                        items.append(
+                            {
+                                'label': label,
+                                'url': 'rtmp://' + play_url,
+                                'is_playable': True
+                            }
+                        )
+            except IOError:
+                pass
+
+    URL = 'http://live.saimanet.kg'
+    content = App.http_request(URL)
+    if content:
+        html = BeautifulSoup(content, 'html.parser')
+        for camera in html.find_all(class_='onemaincam'):
+            try:
+                camera = camera.find(class_='title').find('a')
+                label = App.bs_get_text(camera)
+                href = camera.get('href')
+
+                content = App.http_request(URL + href)
+                if content:
+                    html1 = BeautifulSoup(content, 'html.parser')
+                    source = html1.find('source')
                     items.append(
                         {
                             'label': label,
-                            'url': cams.group(1) + ' timeout=1', # cams.group(1) + ' timeout=3',
+                            'url': source.get('src'),
                             'is_playable': True
                         }
                     )
+            except:
+                pass
     return items

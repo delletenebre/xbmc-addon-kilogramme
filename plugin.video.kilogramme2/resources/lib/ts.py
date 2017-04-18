@@ -55,7 +55,9 @@ def ts_index(params):
 def ts_search(params):
     items = []
     query = App.keyboard(heading='Поиск')
-    if query is not None and query != '':
+    if query is None:
+        pass
+    elif query != '':
         query = query.decode('utf-8').lower()
         tvshows = App.http_request('%s/show/search/%s' % (URL, query))
         if tvshows is not None:
@@ -130,7 +132,7 @@ def ts_last_added(params):
                         'label': label,
                         'info': {
                             'video': {
-                                'plot': '' if App.get_skin() == 'skin.confluence' else description,
+                                'plot': '' if App.get_skin_name() == 'skin.confluence' else description,
                                 'genre': App.clear_xbmc_tags(genres)
                             }
                         },
@@ -177,7 +179,7 @@ def ts_category(params):
                     label = tag_p.get_text()
                     description = App.format_description(episodes=episodes,
                                                          country=country,
-                                                         genre='' if App.get_skin() == 'skin.confluence' else genres)
+                                                         genre='' if App.get_skin_name() == 'skin.confluence' else genres)
                     items.append(
                         {
                             'label': label,
@@ -237,7 +239,7 @@ def ts_tvshow_seasons(params):
         genres = App.explode_info_string(genres)
         description = App.format_description(description=description,
                                              country=country,
-                                             genre='' if App.get_skin() == 'skin.confluence' else genres)
+                                             genre='' if App.get_skin_name() == 'skin.confluence' else genres)
         meta_premiered = ''
         year = html.find('h3')
         if year:
@@ -292,7 +294,7 @@ def ts_tvshow_seasons(params):
             )
 
         items.insert(0, {
-            'label': App.replace_html_codes('[B]%s[/B]&emsp;Все сезоны'.decode('utf-8') % title),
+            'label': App.replace_html_codes('%s&emsp;Все сезоны'.decode('utf-8') % App.format_bold(title)),
             'thumb': poster,
             'art': {
                 'poster': poster
@@ -322,7 +324,9 @@ def ts_tvshow_seasons(params):
 @P.action()
 def ts_tvshow_season_episodes(params):
     items = []
+
     xbmc.executebuiltin('ActivateWindow(busydialog)')
+
     for id in params.episodes_ids.split(','):
         try:
             (resp_headers, content) = H.request('{0}/show/episode/episode.json?episode={1}'.format(URL, id), 'GET', headers={'X-Requested-With': 'XMLHttpRequest'})

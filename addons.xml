@@ -47,7 +47,7 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
 
 <addon id="plugin.video.kilogramme2"
        name="KG Фильмы и Сериалы"
-       version="2.1.0"
+       version="2.2.0"
        provider-name="delletenebre@gmail.com">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
@@ -76,9 +76,11 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
         <website></website>
         <email>delletenebre@gmail.com</email>
         <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
-        <news>v2.1.0 (2017-03-21)
-- Добавлен Namba.Кинозал
-- Исправлен поиск на ts.kg
+        <news>v2.2.0 (2017-04-19)
+- Добавлен Namba.Сериалы
+- Исправлена работоспособность на сторонних скинах
+- Добавлена опция "Использовать форматирование строк"
+- Прочие незначительные исправления
         </news>
         <assets>
             <icon>icon.png</icon>
