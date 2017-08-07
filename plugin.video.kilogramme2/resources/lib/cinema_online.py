@@ -9,7 +9,7 @@ import math
 import xbmc
 
 
-URL = 'http://cinemaonline.kg'
+URL = 'http://oc.kg'
 API = URL + '/api.php?format=json'
 stars_condition = {
     'count': 1000,
