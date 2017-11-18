@@ -61,8 +61,8 @@ def nm_search(params):
     return App.create_listing(items, content='movies')
 
 
-@P.action()
 @P.cached(720)
+@P.action()
 def nm_top(params):
     items = []
 
@@ -90,8 +90,8 @@ def nm_top(params):
     return App.create_listing(items, content='movies')
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def nm_genres(params):
     items = []
 
@@ -111,8 +111,8 @@ def nm_genres(params):
     return App.create_listing(items)
 
 
-@P.action()
 @P.cached(720)
+@P.action()
 def nm_movies_by_genre(params):
     params.refresh = 'page' in params
 
@@ -177,8 +177,44 @@ def nm_movie(params):
         if cover is not None:
             cover = cover.find('img').get('src')
 
-        video_id = re.compile('<param value="config=.+?__(.+?)" name="flashvars">').findall(content)[0]
-        items.append(create_movie_item(video_id, cover))
+        description = App.bs_get_text_with_newlines(html.find(class_='description-text'))
+
+        flashvars = re.compile('<param value="config=.+?__(.+?)" name="flashvars">').findall(content)
+        if flashvars:
+            video_id = flashvars[0]
+            items.append(create_movie_item(video_id, cover))
+        else:
+            video = html.find('source', {'type': 'video/mp4'})
+            if video is not None:
+                title = html.find(class_='panel-title')
+                if title is not None:
+                    title = title.get_text().split('/', 1)
+                    P.log_error(title)
+                    if len(title) == 2:
+                        title = title[1]
+                    else:
+                        title = title[0]
+                else:
+                    title = 'Просмотр'
+
+                items.append({
+                    'label': App.remove_double_spaces(title),
+                    'thumb': cover,
+                    'art': {
+                        'poster': cover
+                    },
+                    'info': {
+                        'video': {
+                            'plot': '' if App.get_skin_name() == 'skin.confluence' else description,
+                        }
+                    },
+                    'url': video.get('src'),
+                    'is_playable': True,
+                })
+            else:
+                App.notification('Ошибка', 'Фильм не найден', 'info')
+
+        
     return App.create_listing(items, content='movies')
 
 

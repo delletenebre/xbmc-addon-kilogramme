@@ -5,8 +5,8 @@ from App import P
 import re
 
 
-@P.action()
 @P.cached(30)
+@P.action()
 def wc_index(params):
     items = []
     URL = 'http://smotri.kg'

@@ -13,8 +13,8 @@ URL = 'http://namba.kg/serials/'
 API = 'http://namba.kg/api'
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def ns_index(params):
     items = [{
         'label': '[ Поиск ]',
@@ -78,26 +78,26 @@ def ns_search(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.action()
 @P.cached(720)
+@P.action()
 def ns_top(params):
     return get_serials_from_index_page('charts-result-block')
 
 
-@P.action()
 @P.cached(120)
+@P.action()
 def ns_new_episodes(params):
     return get_serials_from_index_page('new-episode-serials')
 
 
-@P.action()
 @P.cached(720)
+@P.action()
 def ns_new_serials(params):
     return get_serials_from_index_page('last-serials')
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def ns_serials_by_genre(params):
     items = []
     P.log_error(params.url)
@@ -125,8 +125,8 @@ def ns_serials_by_genre(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def ns_serial_seasons(params):
     items = []
 

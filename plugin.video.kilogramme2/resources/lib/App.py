@@ -9,6 +9,7 @@ import HTMLParser
 import urllib
 import socket
 import traceback
+import types
 
 
 P = Plugin()
@@ -199,7 +200,7 @@ def format_bold(text):
 
 
 def format_description(country='', genre='', description='', director='', episodes='', rating=''):
-    if len(country) == 2:
+    if country and len(country) == 2:
         country = get_country(country)
     if country and country != STR_NO_DATA:
         country = format_bold(country)
@@ -233,7 +234,7 @@ def format_description(country='', genre='', description='', director='', episod
 
 
 def make_root(url, path):
-    return '/%s/%s'.format(url, path)
+    return '/%s/%s' % (url, path)
 
 
 def replace_html_codes(text):
@@ -267,6 +268,17 @@ def bs_get_text(element):
     return ''
 
 
+def bs_get_text_with_newlines(element):
+    text = ''
+    if element is not None:
+        for elem in element.recursiveChildGenerator():
+            if isinstance(elem, types.StringTypes):
+                text += elem.strip()
+            elif elem.name == 'br':
+                text += '\n'
+    return text
+
+
 def create_playlist(items=[{}], type='video'):
     playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
     playlist.clear()
@@ -282,6 +294,10 @@ def explode_info_string(string):
 def timestring2seconds(timestring):
     ftr = [3600, 60, 1]
     return sum([a * b for a, b in zip(ftr, map(int, timestring.split(':')))])
+
+
+def remove_double_spaces(str):
+    return ' '.join(str.split())
 
 
 def get_country(code):

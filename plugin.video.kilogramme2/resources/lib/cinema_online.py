@@ -79,8 +79,8 @@ def co_search(params):
     return App.create_listing(items, content='movies')
 
 
-@P.action()
 @P.cached(360)
+@P.action()
 def co_bestsellers(params):
     items = []
 
@@ -109,8 +109,8 @@ def co_bestsellers(params):
     return App.create_listing(items, content='movies')
 
 
-@P.action()
 @P.cached(360)
+@P.action()
 def co_movies(params):
     if 'genre_id' not in params:
         params.genre_id = ''
@@ -188,8 +188,8 @@ def co_movies(params):
     return App.create_listing(items, content='movies', update_listing=params.refresh)
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def co_genres(params):
     items = []
 

@@ -13,8 +13,9 @@ from operator import itemgetter
 URL = 'http://www.ts.kg'
 
 
-@P.action()
+
 @P.cached(1440)
+@P.action()
 def ts_index(params):
     items = []
     content = App.http_request(URL + '/show')
@@ -83,8 +84,8 @@ def ts_search(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.action()
 @P.cached(120)
+@P.action()
 def ts_last_added(params):
     items = []
 
@@ -142,8 +143,8 @@ def ts_last_added(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def ts_category(params):
     items = []
 
@@ -172,7 +173,7 @@ def ts_category(params):
 
                     country = tag_p.find('img')
                     if country is not None:
-                        country = App.get_country(country.get('title'))
+                        country = App.get_country(country.get('alt'))
                     else:
                         country = ''
 
@@ -211,8 +212,8 @@ def ts_category(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.action()
 @P.cached(1440)
+@P.action()
 def ts_tvshow_seasons(params):
     items = []
     content = App.http_request(URL + params.href)
@@ -225,14 +226,15 @@ def ts_tvshow_seasons(params):
 
         country = App.STR_NO_DATA
         genres = []
-        breadcrumbs = html.find(class_='breadcrumb')
-        if breadcrumbs is not None:
-            try:
-                country = breadcrumbs.find('img').get('title')
-            except:
-                pass
+        tvshow_tags = html.find(class_='app-show-tags')
+        if tvshow_tags is not None:
+            country = tvshow_tags.find(class_='app-show-tags-flag')
+            if country:
+                country = country.get('data-original-title')
+            else:
+                country = App.STR_NO_DATA
 
-            for a in breadcrumbs.find_all('a'):
+            for a in tvshow_tags.find_all('a'):
                 href = a.get('href').split('/')
                 if href[1] == 'genre':
                     genres.append(a.get_text())

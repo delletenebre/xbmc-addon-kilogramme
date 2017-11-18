@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.kilogramme2"
        name="KG Фильмы и Сериалы"
-       version="2.2.1"
+       version="2.3.0"
        provider-name="delletenebre@gmail.com">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
@@ -16,7 +16,6 @@
         <summary lang="ru">Просмотр видео с лучших сайтов в зоне *.kg</summary>
         <description lang="ru">
 Просмотр видео с лучших сайтов Кыргызстана:
-    * ONAIR.kg (http://www.onair.kg/)
     * TS.KG (http://ts.kg/)
     * Cinema Online (http://cinemaonline.kg/)
     * Namba.Кинозал (http://movie.namba.kg/)
@@ -30,11 +29,11 @@
         <website></website>
         <email>delletenebre@gmail.com</email>
         <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
-        <news>v2.2.0 (2017-04-19)
-- Добавлен Namba.Сериалы
-- Исправлена работоспособность на сторонних скинах
-- Добавлена опция "Использовать форматирование строк"
-- Прочие незначительные исправления
+        <news>v2.3.0 (2017-11-18)
+- Удалён OnAir
+- Исправлена ошибки
+- Добавлена опция "Очистить кэш"
+- Обновлены библиотеки
         </news>
         <assets>
             <icon>icon.png</icon>
