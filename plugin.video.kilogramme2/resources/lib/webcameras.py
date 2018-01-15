@@ -2,39 +2,43 @@
 from bs4 import BeautifulSoup
 import App
 from App import P
-import re
 
 
 @P.cached(30)
 @P.action()
 def wc_index(params):
     items = []
-    URL = 'http://smotri.kg'
-    content = App.http_request(URL)
-    if content:
-        html = BeautifulSoup(content, 'html.parser')
-        div = html.find(class_='view-content')
-        for camera in div.find_all('a'):
-            try:
-                label = App.bs_get_text(camera)
-                href = camera.get('href')
+    url_format = 'http://212.42.105.251:8080/%s/tracks-v1/index.m3u8'
+    cameras = {
+        'Площадь Победы': 'pobeda',
+        'Кумысолечебница "Байтур"': 'baytur',
+        'Южная магистраль': 'asanbai1',
+        'Ибраимова/Кулатова': 'record',
+        '6 м-н': '6mk',
+        'ГБ "Тоо-Ашуу" - 2': 'gbashuu2',
+        'ГБ "Тоо-Ашуу" - 1': 'gbashuu1',
+        'Проект ВОЛС Тоо Ашуу 2': 'tooashuu2',
+        'Проект ВОЛС Тоо Ашуу 1': 'tooashuu1',
+        'Советская - Боконбаева - 2': 'sov2',
+        'Советская - Боконбаева - 1': 'sov1',
+        'Алма-Атинская/Ахунбаева': 'ahunbaeva',
+        'Чуй/Советская (ОАО Кыргызтелеком)': 'chui',
+        'Нарын': 'naryn',
+        'Бостери (ОАО Кыргызтелеком)': 'bosteri',
+        'Кара-Балта площадь им. Ленина': 'kb',
+        'Ибраимова - Боконбаева': 'ibraimova',
+        'Сулайман Тоо - город Ош': 'osh'
+    }
 
-                content = App.http_request(URL + href)
-                if content:
-                    play_url = re.compile('\"rtmp://(.+?)\"').findall(content)[0]
-                    if play_url:
-                        items.append(
-                            {
-                                'label': label,
-                                'url': 'rtmp://' + play_url,
-                                'is_playable': True
-                            }
-                        )
-            except IOError:
-                pass
+    for name in sorted(cameras):
+        items.append({
+            'label': name,
+            'url': url_format % cameras[name],
+            'is_playable': True
+        })
 
-    URL = 'http://live.saimanet.kg'
-    content = App.http_request(URL)
+    url = 'http://live.saimanet.kg'
+    content = App.http_request(url)
     if content:
         html = BeautifulSoup(content, 'html.parser')
         for camera in html.find_all(class_='onemaincam'):
@@ -43,7 +47,7 @@ def wc_index(params):
                 label = App.bs_get_text(camera)
                 href = camera.get('href')
 
-                content = App.http_request(URL + href)
+                content = App.http_request(url + href)
                 if content:
                     html1 = BeautifulSoup(content, 'html.parser')
                     source = html1.find('source')

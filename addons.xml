@@ -47,7 +47,7 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
 
 <addon id="plugin.video.kilogramme2"
        name="KG Фильмы и Сериалы"
-       version="2.3.0"
+       version="2.3.1"
        provider-name="delletenebre@gmail.com">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
@@ -75,11 +75,8 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
         <website></website>
         <email>delletenebre@gmail.com</email>
         <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
-        <news>v2.3.0 (2017-11-18)
-- Удалён OnAir
-- Исправлена ошибки
-- Добавлена опция "Очистить кэш"
-- Обновлены библиотеки
+        <news>v2.3.1 (2018-01-15)
+- Исправлены Веб-камеры
         </news>
         <assets>
             <icon>icon.png</icon>
