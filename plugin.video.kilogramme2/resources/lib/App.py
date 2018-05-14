@@ -87,7 +87,10 @@ def http_request(url, method='GET', data={}):
     try:
         (resp_headers, content) = H.request(
             url, method, urllib.urlencode(data),
-            headers={'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream'}
+            headers={
+                'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
+            }
         )
         if resp_headers.status == 200:
             return content
