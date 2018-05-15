@@ -331,7 +331,7 @@ def ts_tvshow_season_episodes(params):
 
     for id in params.episodes_ids.split(','):
         try:
-            (resp_headers, content) = H.request('{0}/show/episode/episode.json?episode={1}'.format(URL, id), 'GET', headers={'X-Requested-With': 'XMLHttpRequest'})
+            (resp_headers, content) = H.request('{0}/show/episode/episode.json?episode={1}'.format(URL, id), 'GET', headers={'X-Requested-With': 'XMLHttpRequest', 'User-Agent': App.USER_AGENT})
             if resp_headers.status == 200:
                 episode = json.loads(content)
 

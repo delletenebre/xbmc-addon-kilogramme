@@ -18,6 +18,7 @@ P = Plugin()
 PLUGIN_ID = P.addon.getAddonInfo('id')
 MEDIA_URL = 'special://home/addons/{0}/resources/media/'.format(PLUGIN_ID)
 ADDON_FOLDER = xbmc.translatePath('special://profile/addon_data/' + PLUGIN_ID)
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
 
 STR_NO_DATA = 'n/d'
 STR_LIST_DELIMITER = '[/B] / [B]'
@@ -83,13 +84,14 @@ VIEW_MODES = {
 H = httplib2.Http(ADDON_FOLDER + '/.cache', disable_ssl_certificate_validation=True)
 
 
+
 def http_request(url, method='GET', data={}):
     try:
         (resp_headers, content) = H.request(
             url, method, urllib.urlencode(data),
             headers={
                 'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
+                'User-Agent': USER_AGENT
             }
         )
         if resp_headers.status == 200:
