@@ -2,40 +2,43 @@
 from bs4 import BeautifulSoup
 import App
 from App import P
+from urlparse import urlparse, parse_qs
 
+
+URL = 'http://smotri.kg%s'
 
 @P.cached(30)
 @P.action()
 def wc_index(params):
     items = []
-    url_format = 'http://212.42.105.251:8080/%s/tracks-v1/index.m3u8'
-    cameras = {
-        'Площадь Победы': 'pobeda',
-        'Кумысолечебница "Байтур"': 'baytur',
-        'Южная магистраль': 'asanbai1',
-        'Ибраимова/Кулатова': 'record',
-        '6 м-н': '6mk',
-        'ГБ "Тоо-Ашуу" - 2': 'gbashuu2',
-        'ГБ "Тоо-Ашуу" - 1': 'gbashuu1',
-        'Проект ВОЛС Тоо Ашуу 2': 'tooashuu2',
-        'Проект ВОЛС Тоо Ашуу 1': 'tooashuu1',
-        'Советская - Боконбаева - 2': 'sov2',
-        'Советская - Боконбаева - 1': 'sov1',
-        'Алма-Атинская/Ахунбаева': 'ahunbaeva',
-        'Чуй/Советская (ОАО Кыргызтелеком)': 'chui',
-        'Нарын': 'naryn',
-        'Бостери (ОАО Кыргызтелеком)': 'bosteri',
-        'Кара-Балта площадь им. Ленина': 'kb',
-        'Ибраимова - Боконбаева': 'ibraimova',
-        'Сулайман Тоо - город Ош': 'osh'
-    }
+    
+    url_format = 'rtmp://212.42.105.251:1935/%s/?token=%s'
+    # url_format = 'http://212.42.105.251:8080/record/mpegts?token=%s'
+    # url_format = 'http://212.42.105.251:8080/record/tracks-v1/mono.m3u8?token=%s'
 
-    for name in sorted(cameras):
-        items.append({
-            'label': name,
-            'url': url_format % cameras[name],
-            'is_playable': True
-        })
+    content = App.http_request(URL % '/')
+    if content:
+        html = BeautifulSoup(content, 'html.parser')
+        container = html.find(class_='view-cameras')
+        for link in container.find_all('a'):
+            if link is not None:
+                url = link.get('href')
+                content = App.http_request(URL % url)
+                if content:
+                    html = BeautifulSoup(content, 'html.parser')
+                    iframe = html.find('iframe')
+                    if iframe is not None:
+                        url = iframe.get('src')
+                        parsed_url = urlparse(url)
+                        url_splitted = url.split('/')
+                        params = parse_qs(parsed_url.query)
+                        if 'token' in params:
+                            token = params['token'][0].strip()
+                            items.append({
+                                'label': link.get_text(),
+                                'url': url_format % (url_splitted[3], token),
+                                'is_playable': True
+                            })
 
     url = 'http://live.saimanet.kg'
     content = App.http_request(url)

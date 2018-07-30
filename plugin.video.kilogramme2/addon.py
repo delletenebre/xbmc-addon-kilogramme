@@ -4,7 +4,6 @@ from resources.lib.App import P
 import shutil
 import os
 import resources.lib.ts
-import resources.lib.on_air
 import resources.lib.cinema_online
 import resources.lib.namba_movies
 import resources.lib.namba_serials

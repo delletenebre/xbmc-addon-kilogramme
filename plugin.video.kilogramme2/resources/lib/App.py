@@ -18,7 +18,7 @@ P = Plugin()
 PLUGIN_ID = P.addon.getAddonInfo('id')
 MEDIA_URL = 'special://home/addons/{0}/resources/media/'.format(PLUGIN_ID)
 ADDON_FOLDER = xbmc.translatePath('special://profile/addon_data/' + PLUGIN_ID)
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.181 YaBrowser/18.6.1.770 Yowser/2.5 Safari/537.36'
 
 STR_NO_DATA = 'n/d'
 STR_LIST_DELIMITER = '[/B] / [B]'
@@ -85,7 +85,7 @@ H = httplib2.Http(ADDON_FOLDER + '/.cache', disable_ssl_certificate_validation=T
 
 
 
-def http_request(url, method='GET', data={}):
+def http_request(url, method='GET', data={}, ):
     try:
         (resp_headers, content) = H.request(
             url, method, urllib.urlencode(data),
@@ -98,13 +98,32 @@ def http_request(url, method='GET', data={}):
             return content
         else:
             noty('server_error')
-            P.log_error(traceback.format_exc)
+            P.log_error(url)
+            P.log_error(resp_headers)
     except httplib2.ServerNotFoundError:
         noty('internet_check')
         P.log_error(traceback.format_exc)
     except socket.timeout:
         noty('internet_timeout')
         P.log_error(traceback.format_exc)
+    except IOError as e:
+        P.log_error('IOError')
+        try:
+            (resp_headers, content) = httplib2.Http(disable_ssl_certificate_validation=True).request(
+                url, method, urllib.urlencode(data),
+                headers={
+                    'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream',
+                    'User-Agent': USER_AGENT
+                }
+            )
+            if resp_headers.status == 200:
+                return content
+            else:
+                noty('server_error')
+                P.log_error(url)
+                P.log_error(resp_headers)
+        except:
+            P.log_error('General Error')
 
     return None
 
