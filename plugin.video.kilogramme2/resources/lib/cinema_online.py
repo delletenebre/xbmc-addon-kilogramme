@@ -9,7 +9,8 @@ import math
 import xbmc
 
 
-URL = 'http://oc.kg'
+SERVICE_ID = 'oc.kg'
+URL = 'https://oc.kg'
 API = URL + '/api.php?format=json'
 stars_condition = {
     'count': 1000,
@@ -23,6 +24,15 @@ stars_condition = {
 
 @P.action()
 def co_index(params):
+    # response = App.http_request(URL, response='headers')
+    # if 'set-cookie' in response:
+    #     for resp in response['set-cookie'].split(';'):
+    #         keyvalue = resp.split('=')
+    #         if (keyvalue[0] == 'PHPSESSID'):
+    #             STORAGE['cookie'] = resp
+    #             break
+
+
     return [{
         'label': '[ Поиск ]',
         'icon': App.get_media('find'),
@@ -83,7 +93,6 @@ def co_search(params):
 @P.action()
 def co_bestsellers(params):
     items = []
-
     content = App.http_request(API, 'POST', {'action[0]': 'Video.getBestsellers'})
     if content:
         data = json.loads(content)['json'][0]['response']

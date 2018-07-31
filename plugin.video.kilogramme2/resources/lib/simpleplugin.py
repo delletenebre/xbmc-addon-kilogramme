@@ -12,35 +12,41 @@ import os
 import sys
 import re
 import inspect
-from datetime import datetime, timedelta
+import time
 import cPickle as pickle
-from urlparse import parse_qs
-from urllib import urlencode
+from urlparse import parse_qs, urlparse
+from urllib import urlencode, quote_plus, unquote_plus
 from functools import wraps
 from collections import MutableMapping, namedtuple
 from copy import deepcopy
 from types import GeneratorType
 from hashlib import md5
-from shutil import move
+from shutil import copyfile
 from contextlib import contextmanager
 from pprint import pformat
+from platform import uname
 import xbmcaddon
 import xbmc
 import xbmcplugin
 import xbmcgui
 
 __all__ = ['SimplePluginError', 'Storage', 'MemStorage',
-           'Addon', 'Plugin', 'Params', 'debug_exception']
+           'Addon', 'Plugin', 'RoutedPlugin', 'Params', 'debug_exception']
 
 ListContext = namedtuple('ListContext', ['listing', 'succeeded',
                                          'update_listing', 'cache_to_disk',
                                          'sort_methods', 'view_mode',
                                          'content', 'category'])
 PlayContext = namedtuple('PlayContext', ['path', 'play_item', 'succeeded'])
+Route = namedtuple('Route', ['pattern', 'func'])
 
 
 class SimplePluginError(Exception):
     """Custom exception"""
+    pass
+
+
+class TimeoutError(SimplePluginError):
     pass
 
 
@@ -70,6 +76,8 @@ def debug_exception(logger=None):
     diagnostic info to the Kodi log if an unhandled exception
     happens within the context. The info includes the following items:
 
+    - System info
+    - Kodi version
     - Module path.
     - Code fragment where the exception has happened.
     - Global variables.
@@ -92,16 +100,22 @@ def debug_exception(logger=None):
     except:
         if logger is None:
             logger = lambda msg: xbmc.log(msg, xbmc.LOGERROR)
+        frame_info = inspect.trace(5)[-1]
         logger('Unhandled exception detected!')
         logger('*** Start diagnostic info ***')
-        frame_info = inspect.trace(5)[-1]
+        logger('System info: {0}'.format(uname()))
+        logger('OS info: {0}'.format(xbmc.getInfoLabel('System.OSVersionInfo')))
+        logger('Kodi version: {0}'.format(
+            xbmc.getInfoLabel('System.BuildVersion'))
+        )
         logger('File: {0}'.format(frame_info[1]))
         context = ''
-        for i, line in enumerate(frame_info[4], frame_info[2] - frame_info[5]):
-            if i == frame_info[2]:
-                context += '{0}:>{1}'.format(str(i).rjust(5), line)
-            else:
-                context += '{0}: {1}'.format(str(i).rjust(5), line)
+        if frame_info[4] is not None:
+            for i, line in enumerate(frame_info[4], frame_info[2] - frame_info[5]):
+                if i == frame_info[2]:
+                    context += '{0}:>{1}'.format(str(i).rjust(5), line)
+                else:
+                    context += '{0}: {1}'.format(str(i).rjust(5), line)
         logger('Code context:\n' + context)
         logger('Global variables:\n' + _format_vars(frame_info[0].f_globals))
         logger('Local variables:\n' + _format_vars(frame_info[0].f_locals))
@@ -165,6 +179,9 @@ class Storage(MutableMapping):
     def __init__(self, storage_dir, filename='storage.pcl'):
         """
         Class constructor
+
+        :type storage_dir: str
+        :type filename: str
         """
         self._storage = {}
         self._hash = None
@@ -174,7 +191,7 @@ class Storage(MutableMapping):
                 contents = fo.read()
             self._storage = pickle.loads(contents)
             self._hash = md5(contents).hexdigest()
-        except (IOError, pickle.PickleError, EOFError):
+        except (IOError, pickle.PickleError, EOFError, AttributeError):
             pass
 
     def __enter__(self):
@@ -212,16 +229,22 @@ class Storage(MutableMapping):
         and invalidates the Storage instance. Unchanged Storage is not saved
         but simply invalidated.
         """
-        contents = pickle.dumps(self._storage)
+        contents = pickle.dumps(self._storage, protocol=2)
         if self._hash is None or md5(contents).hexdigest() != self._hash:
             tmp = self._filename + '.tmp'
+            start = time.time()
+            while os.path.exists(tmp):
+                if time.time() - start > 2.0:
+                    raise TimeoutError(
+                        'Exceeded timeout for saving {0} contents!'.format(self)
+                    )
+                xbmc.sleep(100)
             try:
                 with open(tmp, 'wb') as fo:
                     fo.write(contents)
-            except:
+                copyfile(tmp, self._filename)
+            finally:
                 os.remove(tmp)
-                raise
-            move(tmp, self._filename)  # Atomic save
         del self._storage
 
     def copy(self):
@@ -267,6 +290,10 @@ class MemStorage(MutableMapping):
     :type window_id: int
     """
     def __init__(self, storage_id, window_id=10000):
+        """
+        :type storage_id: str
+        :type window_id: int
+        """
         self._id = storage_id
         self._window = xbmcgui.Window(window_id)
         try:
@@ -275,10 +302,16 @@ class MemStorage(MutableMapping):
             self['__keys__'] = []
 
     def _check_key(self, key):
+        """
+        :type key: str
+        """
         if not isinstance(key, str):
             raise TypeError('Storage key must be of str type!')
 
     def _format_contents(self):
+        """
+        :rtype: str
+        """
         lines = []
         for key, val in self.iteritems():
             lines.append('{0}: {1}'.format(repr(key), repr(val)))
@@ -348,6 +381,8 @@ class Addon(object):
     def __init__(self, id_=''):
         """
         Class constructor
+
+        :type id_: str
         """
         self._addon = xbmcaddon.Addon(id_)
         self._configdir = xbmc.translatePath(self._addon.getAddonInfo('profile')).decode('utf-8')
@@ -624,11 +659,12 @@ class Addon(object):
         """
         if duration <= 0:
             raise ValueError('Caching duration cannot be zero or negative!')
-        current_time = datetime.now()
+        current_time = time.time()
         key = func.__name__ + str(args) + str(kwargs)
         try:
             data, timestamp = cache[key]
-            if current_time - timestamp > timedelta(minutes=duration):
+            # Invalidate old cached object with datetime timestamp
+            if not isinstance(timestamp, float) or current_time - timestamp > duration * 60:
                 raise KeyError
             self.log_debug('Cache hit: {0}'.format(key))
         except KeyError:
@@ -925,17 +961,30 @@ class Plugin(Addon):
     def __init__(self, id_=''):
         """
         Class constructor
+
+        :type id_: str
         """
         super(Plugin, self).__init__(id_)
         self._url = 'plugin://{0}/'.format(self.id)
         self._handle = None
         self.actions = {}
+        self._params = None
 
     def __str__(self):
         return '<Plugin {0}>'.format(sys.argv)
 
     def __repr__(self):
         return '<simpleplugin.Plugin object {0}>'.format(sys.argv)
+
+    @property
+    def params(self):
+        """
+        Get plugin call parameters
+
+        :return: plugin call parameters
+        :rtype: Params
+        """
+        return self._params
 
     @staticmethod
     def get_params(paramstring):
@@ -1022,23 +1071,10 @@ class Plugin(Addon):
                 'Use "category" parameter of Plugin.create_listing() instead.'
             )
         self._handle = int(sys.argv[1])
-        params = self.get_params(sys.argv[2][1:])
-        action = params.get('action', 'root')
+        self._params = self.get_params(sys.argv[2][1:])
         self.log_debug(str(self))
-        self.log_debug('Actions: {0}'.format(str(self.actions.keys())))
-        self.log_debug('Called action "{0}" with params "{1}"'.format(
-            action, str(params))
-        )
-        try:
-            action_callable = self.actions[action]
-        except KeyError:
-            raise SimplePluginError('Invalid action: "{0}"!'.format(action))
-        else:
-            # inspect.isfunction is needed for tests
-            if inspect.isfunction(action_callable) and not inspect.getargspec(action_callable).args:
-                result = action_callable()
-            else:
-                result = action_callable(params)
+        with debug_exception(self.log_error):
+            result = self._resolve_function()
             self.log_debug('Action return value: {0}'.format(str(result)))
             if isinstance(result, (list, GeneratorType)):
                 self._add_directory_items(self.create_listing(result))
@@ -1049,7 +1085,28 @@ class Plugin(Addon):
             elif isinstance(result, PlayContext):
                 self._set_resolved_url(result)
             else:
-                self.log_debug('The action "{0}" has not returned any valid data to process.'.format(action))
+                self.log_debug('The action/route has not returned any valid data to process.')
+
+    def _resolve_function(self):
+        """
+        Resolve action from plugin call params and call the respective callable function
+
+        :return: action callable's return value
+        """
+        self.log_debug('Actions: {0}'.format(str(self.actions.keys())))
+        action = self._params.get('action', 'root')
+        self.log_debug('Called action "{0}" with params "{1}"'.format(action, str(self._params)))
+        try:
+            action_callable = self.actions[action]
+        except KeyError:
+            raise SimplePluginError('Invalid action: "{0}"!'.format(action))
+        else:
+            with debug_exception(self.log_error):
+                # inspect.isfunction is needed for tests
+                if inspect.isfunction(action_callable) and not inspect.getargspec(action_callable).args:
+                    return action_callable()
+                else:
+                    return action_callable(self._params)
 
     @staticmethod
     def create_listing(listing, succeeded=True, update_listing=False, cache_to_disk=False, sort_methods=None,
@@ -1058,7 +1115,7 @@ class Plugin(Addon):
         Create and return a context dict for a virtual folder listing
 
         :param listing: the list of the plugin virtual folder items
-        :type listing: list or types.GeneratorType
+        :type listing: list or GeneratorType
         :param succeeded: if ``False`` Kodi won't open a new listing and stays on the current level.
         :type succeeded: bool
         :param update_listing: if ``True``, Kodi won't open a sub-listing but refresh the current one.
@@ -1190,14 +1247,22 @@ class Plugin(Addon):
                     is_folder = False
             xbmcplugin.addDirectoryItem(self._handle, item['url'], list_item, is_folder)
         if context.sort_methods is not None:
-            if isinstance(context.sort_methods, int):
-                xbmcplugin.addSortMethod(self._handle, context.sort_methods)
+            if isinstance(context.sort_methods, (int, dict)):
+                sort_methods = [context.sort_methods]
             elif isinstance(context.sort_methods, (tuple, list)):
-                for method in context.sort_methods:
-                    xbmcplugin.addSortMethod(self._handle, method)
+                sort_methods = context.sort_methods
             else:
                 raise TypeError(
-                    'sort_methods parameter must be of int, tuple or list type!')
+                    'sort_methods parameter must be of int, dict, tuple or list type!')
+            for method in sort_methods:
+                if isinstance(method, int):
+                    xbmcplugin.addSortMethod(self._handle, method)
+                elif isinstance(method, dict):
+                    xbmcplugin.addSortMethod(self._handle, **method)
+                else:
+                    raise TypeError(
+                        'method parameter must be of int or dict type!')
+                    
         xbmcplugin.endOfDirectory(self._handle,
                                   context.succeeded,
                                   context.update_listing,

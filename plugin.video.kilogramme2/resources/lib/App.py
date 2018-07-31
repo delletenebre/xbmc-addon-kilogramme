@@ -85,17 +85,18 @@ H = httplib2.Http(ADDON_FOLDER + '/.cache', disable_ssl_certificate_validation=T
 
 
 
-def http_request(url, method='GET', data={}, ):
+def http_request(url, method='GET', data={}, cookie=None, response='content'):
     try:
-        (resp_headers, content) = H.request(
-            url, method, urllib.urlencode(data),
-            headers={
-                'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream',
-                'User-Agent': USER_AGENT
-            }
-        )
+        headers={
+            'Content-type': 'application/x-www-form-urlencoded' if method.lower() == 'post' else 'application/octet-stream',
+            'User-Agent': USER_AGENT
+        }
+        if cookie:
+            headers['cookie'] = cookie
+
+        (resp_headers, content) = H.request(url, method, urllib.urlencode(data), headers=headers)
         if resp_headers.status == 200:
-            return content
+            return content if response=='content' else resp_headers
         else:
             noty('server_error')
             P.log_error(url)
@@ -117,7 +118,7 @@ def http_request(url, method='GET', data={}, ):
                 }
             )
             if resp_headers.status == 200:
-                return content
+                return content if response=='content' else resp_headers
             else:
                 noty('server_error')
                 P.log_error(url)
