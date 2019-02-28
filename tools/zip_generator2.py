@@ -8,12 +8,12 @@ from zipfile import ZipFile
 def get_plugin_version(addon_dir):
   addon_file = os.path.join(addon_dir, 'addon.xml') 
   try:
-    data = open(addon_file, 'r', encoding="utf8").read()
+    data = open(addon_file, 'r').read()
     node = xml.etree.ElementTree.XML(data)
     return(node.get('version'))
   except Exception as e:
-    print('Failed to open %s' % addon_file)
-    print(e.message)
+    print 'Failed to open %s' % addon_file
+    print e.message
 
 
 def create_zip_file(addon_dir):
@@ -26,7 +26,7 @@ def create_zip_file(addon_dir):
       for file_path in files:
         if file_path.endswith('.zip') or file_path.endswith('~') or file_path.endswith('.pyc'):
           continue
-        print("adding %s" % os.path.join(root, file_path)) 
+        print "adding %s" % os.path.join(root, file_path) 
         addonzip.write(os.path.join(root, file_path))
     addonzip.close()
 

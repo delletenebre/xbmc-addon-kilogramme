@@ -11,10 +11,11 @@ URL = 'http://smotri.kg%s'
 @P.action()
 def wc_index(params):
     items = []
+
     
-    url_format = 'rtmp://212.42.105.251:1935/%s/?token=%s'
+    # url_format = 'rtmp://212.42.105.251:1935/%s/?token=%s'
     # url_format = 'http://212.42.105.251:8080/record/mpegts?token=%s'
-    # url_format = 'http://212.42.105.251:8080/record/tracks-v1/mono.m3u8?token=%s'
+    url_format = 'http://212.42.105.251:8080/%s/tracks-v1/mono.m3u8?token=%s'
 
     content = App.http_request(URL % '/')
     if content:
