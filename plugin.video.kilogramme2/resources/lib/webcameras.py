@@ -15,31 +15,31 @@ def wc_index(params):
     
     # url_format = 'rtmp://212.42.105.251:1935/%s/?token=%s'
     # url_format = 'http://212.42.105.251:8080/record/mpegts?token=%s'
-    url_format = 'http://212.42.105.251:8080/%s/tracks-v1/mono.m3u8?token=%s'
+    # url_format = 'http://212.42.105.251:8080/%s/tracks-v1/mono.m3u8?token=%s'
 
-    content = App.http_request(URL % '/')
-    if content:
-        html = BeautifulSoup(content, 'html.parser')
-        container = html.find(class_='view-cameras')
-        for link in container.find_all('a'):
-            if link is not None:
-                url = link.get('href')
-                content = App.http_request(URL % url)
-                if content:
-                    html = BeautifulSoup(content, 'html.parser')
-                    iframe = html.find('iframe')
-                    if iframe is not None:
-                        url = iframe.get('src')
-                        parsed_url = urlparse(url)
-                        url_splitted = url.split('/')
-                        params = parse_qs(parsed_url.query)
-                        if 'token' in params:
-                            token = params['token'][0].strip()
-                            items.append({
-                                'label': link.get_text(),
-                                'url': url_format % (url_splitted[3], token),
-                                'is_playable': True
-                            })
+    # content = App.http_request(URL % '/')
+    # if content:
+    #     html = BeautifulSoup(content, 'html.parser')
+    #     container = html.find(class_='view-cameras')
+    #     for link in container.find_all('a'):
+    #         if link is not None:
+    #             url = link.get('href')
+    #             content = App.http_request(URL % url)
+    #             if content:
+    #                 html = BeautifulSoup(content, 'html.parser')
+    #                 iframe = html.find('iframe')
+    #                 if iframe is not None:
+    #                     url = iframe.get('src')
+    #                     parsed_url = urlparse(url)
+    #                     url_splitted = url.split('/')
+    #                     params = parse_qs(parsed_url.query)
+    #                     if 'token' in params:
+    #                         token = params['token'][0].strip()
+    #                         items.append({
+    #                             'label': link.get_text(),
+    #                             'url': url_format % (url_splitted[3], token),
+    #                             'is_playable': True
+    #                         })
 
     url = 'http://live.saimanet.kg'
     content = App.http_request(url)
@@ -64,4 +64,27 @@ def wc_index(params):
                     )
             except:
                 pass
+
+    kt_cameras = [{
+        'label': 'г. Бишкек (Чуй/Советская)',
+        'url': 'rtmp://213.145.131.243:5010/camera1/mystream'
+    },
+    {
+        'label': 'Иссык-Кульская область (с. Бостери)',
+        'url': 'rtmp://213.145.131.243:5010/camera2/mystream'
+    },
+    {
+        'label': 'г. Ош',
+        'url': 'rtmp://213.145.131.243:5010/camera3/mystream'
+    }]
+
+    for camera in kt_cameras:
+        items.append(
+            {
+                'label': camera['label'],
+                'url': camera['url'],
+                'is_playable': True
+            }
+        )
+
     return items
