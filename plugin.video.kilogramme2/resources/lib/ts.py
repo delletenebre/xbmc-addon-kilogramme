@@ -6,6 +6,7 @@ from App import H
 import xbmc
 import simplejson as json
 import urllib
+import re
 import traceback
 from operator import itemgetter
 
@@ -143,7 +144,7 @@ def ts_last_added(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.cached(1440)
+#@P.cached(1440)
 @P.action()
 def ts_category(params):
     items = []
@@ -212,18 +213,17 @@ def ts_category(params):
     return App.create_listing(items, content='tvshows')
 
 
-@P.cached(1440)
+#@P.cached(1440)
 @P.action()
 def ts_tvshow_seasons(params):
     items = []
     content = App.http_request(URL + params.href)
+    content = content.replace('</span></strong></span></a>', '</span></strong></a></span>') # fix closing tags
     if content:
         html = BeautifulSoup(content, 'html.parser')
-
         title = html.find('meta', {'property': 'og:title'}).get('content')
         description = html.find('meta', {'property': 'og:description'}).get('content').encode('utf-8')
         poster = html.find('meta', {'property': 'og:image'}).get('content')
-
         country = App.STR_NO_DATA
         genres = []
         tvshow_tags = html.find(class_='app-show-tags')
@@ -240,8 +240,8 @@ def ts_tvshow_seasons(params):
                     genres.append(a.get_text())
         genres = App.explode_info_string(genres)
         description = App.format_description(description=description,
-                                             country=country,
-                                             genre='' if App.get_skin_name() == 'skin.confluence' else genres)
+                                            country=country,
+                                            genre='' if App.get_skin_name() == 'skin.confluence' else genres)
         meta_premiered = ''
         year = html.find('h3')
         if year:
@@ -251,30 +251,26 @@ def ts_tvshow_seasons(params):
         else:
             year = ''
         meta_genres = App.clear_xbmc_tags(genres)
+        
+        episodes_ids_all_seasons = ''
+        episodes_all_seasons = 0
+        seasons = html.find_all('div', {'data-season': True})
+        for season in seasons:
+            season_number = season.get('data-season')
 
-        season_counter = 0
-        episodes_counter = 0
-        all_episodes_ids = ''
-        for section in html.find_all('section'):
-            season = section.find(class_='pagination-season')
-            if season is None:
-                continue
-
-            label = section.find('h3').get_text()
-            season_counter += 1
             episodes_ids = []
-            episodes = season.find_all('a')
-            episodes_counter += len(episodes)
-            meta_episodes_count = len(episodes)
-            for a in episodes:
-                episodes_ids.append(a.get('data-id'))
+            episodes = season.find_all(class_="text-primary")
+            for episode in episodes:
+                episode_id = episode.get('id')[23:]
+                episodes_ids.append(episode_id)
 
             episodes_ids = ','.join(episodes_ids)
-            all_episodes_ids += episodes_ids
+            episodes_ids_all_seasons += episodes_ids
+            episodes_all_seasons += len(episodes)
 
             items.append(
                 {
-                    'label': label,
+                    'label': 'Сезон {0}'.format(season_number),
                     'icon': poster,
                     'fanart': poster,
                     'art': {
@@ -285,15 +281,15 @@ def ts_tvshow_seasons(params):
                             'plot': description,
                             'year': year,
                             'genre': meta_genres,
-                            'episode': meta_episodes_count
+                            'episode': str(len(episodes))
                         }
                     },
                     'url': P.get_url(action='ts_tvshow_season_episodes',
-                                     season=season_counter,
+                                     season=season_number,
                                      episodes_ids=episodes_ids),
                     'is_folder': False
                 }
-            )
+            )    
 
         items.insert(0, {
             'label': App.replace_html_codes('%s&emsp;Все сезоны'.decode('utf-8') % App.format_bold(title)),
@@ -307,16 +303,16 @@ def ts_tvshow_seasons(params):
                     'plot': description,
                     'premiered': meta_premiered,
                     'genre': meta_genres,
-                    'episode': episodes_counter
+                    'episode': '10'
                 }
             },
             'properties': {
-                'TotalSeasons': str(season_counter),
-                'TotalEpisodes': str(episodes_counter)
+                'TotalSeasons': str(len(seasons)),
+                'TotalEpisodes': str(episodes_all_seasons)
             },
             'url': P.get_url(action='ts_tvshow_season_episodes',
                              season='all',
-                             episodes_ids=all_episodes_ids),
+                             episodes_ids=episodes_ids_all_seasons),
             'is_folder': False
         })
 
