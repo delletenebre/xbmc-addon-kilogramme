@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
+import re
 import App
 from App import P
 from urlparse import urlparse, parse_qs
@@ -55,5 +56,51 @@ def wc_index(params):
                 )
             except:
                 pass
+    
+    petro_cameras = [{
+        'label': 'Петрозаводск, площадь Кирова',
+        'url': 'http://s1.moidom-stream.ru/s/public/0000000088.m3u8'
+    },
+    {
+        'label': 'Петрозаводск, Московская - Варкауса',
+        'url': 'http://s1.moidom-stream.ru/s/public/0000002179.m3u8'
+    }]
+    
+    for camera in petro_cameras:
+        items.append(
+            {
+                'label': camera['label'],
+                'url': camera['url'],
+                'is_playable': True
+            }
+        )
+
+    url = 'https://moigorod.sampo.ru/stream/156'
+    content = App.http_request(url)
+    if content:
+        result = re.compile("src : '(.+?)',").findall(content)
+        if len(result) > 0:
+            src = result[0]
+            items.append(
+                {
+                    'label': 'Петрозаводск, наб. Варкауса – ул. Мурманская',
+                    'url': src,
+                    'is_playable': True
+                }
+            )
+
+    url = 'https://moigorod.sampo.ru/stream/17'
+    content = App.http_request(url)
+    if content:
+        result = re.compile("src : '(.+?)',").findall(content)
+        if len(result) > 0:
+            src = result[0]
+            items.append(
+                {
+                    'label': 'Петрозаводск, Набережная Онежского озера',
+                    'url': src,
+                    'is_playable': True
+                }
+            )
 
     return items
