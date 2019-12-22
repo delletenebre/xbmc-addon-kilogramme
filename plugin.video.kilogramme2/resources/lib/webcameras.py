@@ -5,41 +5,10 @@ from App import P
 from urlparse import urlparse, parse_qs
 
 
-URL = 'http://smotri.kg%s'
-
 @P.cached(30)
 @P.action()
 def wc_index(params):
     items = []
-
-    
-    # url_format = 'rtmp://212.42.105.251:1935/%s/?token=%s'
-    # url_format = 'http://212.42.105.251:8080/record/mpegts?token=%s'
-    # url_format = 'http://212.42.105.251:8080/%s/tracks-v1/mono.m3u8?token=%s'
-
-    # content = App.http_request(URL % '/')
-    # if content:
-    #     html = BeautifulSoup(content, 'html.parser')
-    #     container = html.find(class_='view-cameras')
-    #     for link in container.find_all('a'):
-    #         if link is not None:
-    #             url = link.get('href')
-    #             content = App.http_request(URL % url)
-    #             if content:
-    #                 html = BeautifulSoup(content, 'html.parser')
-    #                 iframe = html.find('iframe')
-    #                 if iframe is not None:
-    #                     url = iframe.get('src')
-    #                     parsed_url = urlparse(url)
-    #                     url_splitted = url.split('/')
-    #                     params = parse_qs(parsed_url.query)
-    #                     if 'token' in params:
-    #                         token = params['token'][0].strip()
-    #                         items.append({
-    #                             'label': link.get_text(),
-    #                             'url': url_format % (url_splitted[3], token),
-    #                             'is_playable': True
-    #                         })
 
     url = 'http://live.saimanet.kg'
     content = App.http_request(url)
@@ -65,26 +34,26 @@ def wc_index(params):
             except:
                 pass
 
-    kt_cameras = [{
-        'label': 'г. Бишкек (Чуй/Советская)',
-        'url': 'rtmp://213.145.131.243:5010/camera1/mystream'
-    },
-    {
-        'label': 'Иссык-Кульская область (с. Бостери)',
-        'url': 'rtmp://213.145.131.243:5010/camera2/mystream'
-    },
-    {
-        'label': 'г. Ош',
-        'url': 'rtmp://213.145.131.243:5010/camera3/mystream'
-    }]
-
-    for camera in kt_cameras:
-        items.append(
-            {
-                'label': camera['label'],
-                'url': camera['url'],
-                'is_playable': True
-            }
-        )
+    url = 'https://elcat.kg/translation/'
+    content = App.http_request(url)
+    if content:
+        html = BeautifulSoup(content, 'html.parser')
+        for div in html.find_all(class_='tranlation__item'):
+            try:
+                title = div.find('h2').text
+                camera_number = div.get('id').split('_')[1]
+                camera_div = html.find(id='start_stream' + camera_number)
+                camera_src = camera_div.find('iframe').get('src')
+                camera_name = camera_src.split('?')[1].split('&')[0].split('=')[1]
+                
+                items.append(
+                    {
+                        'label': title,
+                        'url': 'https://webcam.elcat.kg:5443/LiveApp/streams/' + camera_name +'.m3u8?token=null ',
+                        'is_playable': True
+                    }
+                )
+            except:
+                pass
 
     return items
