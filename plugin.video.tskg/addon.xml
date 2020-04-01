@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.tskg" name="TS.KG" version="1.0.0" provider-name="Sergei Nezhinskikh">
+<addon id="plugin.video.tskg" name="TS.KG" version="1.0.1" provider-name="Sergei Nezhinskikh">
     <requires>
         <import addon="xbmc.python" version="2.25.0"/>
         <import addon="script.module.routing" version="0.2.0"/>
@@ -10,7 +10,7 @@
     </extension>
     <extension point="xbmc.addon.metadata">
         <summary lang="ru">Просмотр контента TS.KG</summary>
-        <description lang="ru"></description>
+        <description lang="ru">Просмотр контента TS.KG</description>
         <language></language>
         <platform>all</platform>
         <license>MIT</license>
