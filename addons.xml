@@ -1,33 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-<addon id="plugin.video.tskg" name="TS.KG" version="1.0.0" provider-name="Sergei Nezhinskikh">
-    <requires>
-        <import addon="xbmc.python" version="2.25.0"/>
-        <import addon="script.module.routing" version="0.2.0"/>
-        <import addon="script.module.codequick" version="0.9.10"/>
-    </requires>
-    <extension point="xbmc.python.pluginsource" library="main.py">
-        <provides>video</provides>
-    </extension>
-    <extension point="xbmc.addon.metadata">
-        <summary lang="ru">Просмотр контента TS.KG</summary>
-        <description lang="ru"></description>
-        <language></language>
-        <platform>all</platform>
-        <license>MIT</license>
-        <forum></forum>
-        <website></website>
-        <email>delletenebre@gmail.com</email>
-        <source></source>
-        <news></news>
-        <disclaimer></disclaimer>
-        <assets>
-            <icon>resources/icon.png</icon>
-            <fanart>resources/fanart.jpg</fanart>
-        </assets>
-    </extension>
-</addon>
-
 <addon id="plugin.video.kilogramme"
        name="KiloGramme"
        version="1.5.8"
