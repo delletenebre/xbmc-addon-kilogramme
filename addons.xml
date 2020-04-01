@@ -86,6 +86,34 @@ KiloGramme - просмотр видео с лучших сайтов Кыргы
     </extension>
 </addon>
 
+<addon id="plugin.video.tskg" name="TS.KG" version="1.0.0" provider-name="Sergei Nezhinskikh">
+    <requires>
+        <import addon="xbmc.python" version="2.25.0"/>
+        <import addon="script.module.routing" version="0.2.0"/>
+        <import addon="script.module.codequick" version="0.9.10"/>
+    </requires>
+    <extension point="xbmc.python.pluginsource" library="main.py">
+        <provides>video</provides>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary lang="ru">Просмотр контента TS.KG</summary>
+        <description lang="ru"></description>
+        <language></language>
+        <platform>all</platform>
+        <license>MIT</license>
+        <forum></forum>
+        <website></website>
+        <email>delletenebre@gmail.com</email>
+        <source></source>
+        <news></news>
+        <disclaimer></disclaimer>
+        <assets>
+            <icon>resources/icon.png</icon>
+            <fanart>resources/fanart.jpg</fanart>
+        </assets>
+    </extension>
+</addon>
+
 <addon id="repository.kgontv" name="KGOnTV XBMC Add-ons" version="1.0.0" provider-name="delletenebre">
   <extension point="xbmc.addon.repository" name="KGOnTV XBMC Add-ons">
     <info compressed="false">http://raw.github.com/delletenebre/xbmc-addon-kilogramme/master/addons.xml</info>
