@@ -24,14 +24,23 @@ def wc_index(params):
                 content = App.http_request(url + href)
                 if content:
                     html1 = BeautifulSoup(content, 'html.parser')
-                    source = html1.find('source')
+                    iframe = html1.find('iframe')
+                    youtubeId = iframe.get('src').split('/')[-1]
                     items.append(
                         {
                             'label': label,
-                            'url': source.get('src'),
-                            'is_playable': True
+                            'url': 'plugin://plugin.video.youtube?action=play_video&videoid=' + youtubeId,
+                            'is_playable': False
                         }
                     )
+                    # source = html1.find('source')
+                    # items.append(
+                    #     {
+                    #         'label': label,
+                    #         'url': source.get('src'),
+                    #         'is_playable': True
+                    #     }
+                    # )
             except:
                 pass
 
@@ -57,14 +66,25 @@ def wc_index(params):
             except:
                 pass
     
-    petro_cameras = [{
-        'label': 'Петрозаводск, площадь Кирова',
-        'url': 'http://s1.moidom-stream.ru/s/public/0000000088.m3u8'
-    },
-    {
-        'label': 'Петрозаводск, Московская - Варкауса',
-        'url': 'http://s1.moidom-stream.ru/s/public/0000002179.m3u8'
-    }]
+    petro_cameras = [
+        {
+            'label': 'Петрозаводск, площадь Кирова',
+            'url': 'http://s1.moidom-stream.ru/s/public/0000000088.m3u8'
+        },
+        {
+            'label': 'Петрозаводск, Московская - Варкауса',
+            'url': 'http://s1.moidom-stream.ru/s/public/0000002179.m3u8'
+        },
+        {
+            'label': 'Петрозаводск, Онежская набережная',
+            'url': 'http://s1.moidom-stream.ru/s/public/0000000103.m3u8'
+        },
+        {
+            'label': 'Петрозаводск, Древлянское кольцо',
+            'url': 'http://s1.moidom-stream.ru/s/public/0000000192.m3u8'
+        },
+        
+    ]
     
     for camera in petro_cameras:
         items.append(
@@ -75,32 +95,35 @@ def wc_index(params):
             }
         )
 
-    url = 'https://moigorod.sampo.ru/stream/156'
-    content = App.http_request(url)
-    if content:
-        result = re.compile("src : '(.+?)',").findall(content)
-        if len(result) > 0:
-            src = result[0]
-            items.append(
-                {
-                    'label': 'Петрозаводск, наб. Варкауса – ул. Мурманская',
-                    'url': src,
-                    'is_playable': True
-                }
-            )
 
-    url = 'https://moigorod.sampo.ru/stream/17'
-    content = App.http_request(url)
-    if content:
-        result = re.compile("src : '(.+?)',").findall(content)
-        if len(result) > 0:
-            src = result[0]
-            items.append(
-                {
-                    'label': 'Петрозаводск, Набережная Онежского озера',
-                    'url': src,
-                    'is_playable': True
-                }
-            )
+    petro_cameras = [
+        'https://moigorod.sampo.ru/stream/156',
+        'https://moigorod.sampo.ru/stream/125',
+        'https://moigorod.sampo.ru/stream/17',
+        'https://moigorod.sampo.ru/stream/20',
+        'https://moigorod.sampo.ru/stream/58',
+        'https://moigorod.sampo.ru/stream/295',
+        'https://moigorod.sampo.ru/stream/117',
+        'https://moigorod.sampo.ru/stream/186',
+        'https://moigorod.sampo.ru/stream/198',
+        'https://moigorod.sampo.ru/stream/25'
+    ]
+    for url in petro_cameras:
+        items.append(getSampoStream(url))
 
     return items
+
+
+def getSampoStream(url):
+    content = App.http_request(url)
+    if content:
+        html = BeautifulSoup(content, 'html.parser')
+        label = html.find('h1').text.encode('utf-8')
+        result = re.compile("src : '(.+?)',").findall(content)
+        if len(result) > 0:
+            src = result[0]
+            return {
+                'label': 'Петрозаводск, ' + label,
+                'url': src,
+                'is_playable': True
+            }

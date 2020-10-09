@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.kilogramme2"
        name="KG Фильмы и Сериалы"
-       version="2.3.10"
+       version="2.3.11"
        provider-name="delletenebre@gmail.com">
     <requires>
         <import addon="xbmc.python" version="2.1.0" />
@@ -29,7 +29,7 @@
         <website></website>
         <email>delletenebre@gmail.com</email>
         <source>https://github.com/delletenebre/xbmc-addon-kilogramme</source>
-        <news>v2.3.10 (2019-12-22)
+        <news>v2.3.11 (2020-10-09)
 - Добавлены web-камеры
         </news>
         <assets>
