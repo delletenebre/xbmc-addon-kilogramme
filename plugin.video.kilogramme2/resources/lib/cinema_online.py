@@ -240,7 +240,7 @@ def co_movie(params):
                 label = App.replace_html_codes(movie['name'] + '&emsp;Плейлист'.decode('utf-8'))
             else:
                 label = file['name'] if len(movie['files']) > 1 else movie['name']
-                url = file['path'].replace('/home/video/', 'http://p0.oc.kg:8080/')
+                url = file['path'].replace('/home/video/', 'https://p1.oc.kg:8082/')
                 duration = file['metainfo']['playtime_seconds']
 
             items.append(
@@ -293,7 +293,7 @@ def co_movie_playlist(params):
             if file['is_dir']:
                 continue
 
-            url = file['path'].replace('/home/video/', 'http://p0.oc.kg:8080/')
+            url = file['path'].replace('/home/video/', 'https://p1.oc.kg:8082/')
 
             items.append(
                 {
